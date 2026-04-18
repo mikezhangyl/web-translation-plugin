@@ -733,13 +733,28 @@ Execute the previously proposed action: run `/ship` under the new default rule a
   - `gh --version`
   - `gh auth status`
 - Confirmed:
-  - Current branch is `chore/workflow-ship-logging-compliance-a`.
+  - Current branch was `chore/workflow-ship-logging-compliance-a`.
   - Working tree has expected updates.
   - Logging compliance check passed.
   - GitHub CLI is available and authenticated.
+- Committed and pushed updates on `chore/workflow-ship-logging-compliance-a`.
+- Attempted default draft PR creation:
+  - `gh pr create --draft --fill`
+- Encountered repository-history blocker:
+  - local branch history had no common ancestor with remote `main`.
+- Applied recovery flow:
+  - `git fetch origin main`
+  - created new branch from remote default branch: `chore/workflow-ship-draft-pr`
+  - checked out current worktree content from `chore/workflow-ship-logging-compliance-a`
+  - committed migrated snapshot
+  - pushed `chore/workflow-ship-draft-pr`
+- Created draft PR successfully:
+  - `https://github.com/mikezhangyl/translation-plugin/pull/1`
 
 ### Validation
-Preflight passed. Commit/push/PR creation in progress.
+- `npm run check:logs` passed.
+- Branch push succeeded with upstream tracking.
+- Draft PR was created and URL returned.
 
 ### Result
-In progress.
+Success.
