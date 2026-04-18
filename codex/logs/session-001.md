@@ -1,0 +1,745 @@
+# Session 001 Log
+
+## Step 1
+
+### User Instruction
+```text
+[Translated from Chinese] Upgrade task execution to "execution + full process logging", initialize a Plasmo-based Chrome/Edge extension project (React + TypeScript + MV3), add minimal README instructions (install/dev/build), create docs/product.md and codex/working-rules.md, and avoid business logic implementation.
+```
+
+### Understanding
+Set up the extension scaffold and establish an auditable, persistent logging workflow in the repository.
+
+### Plan
+1. Initialize project with Plasmo in the current repository.
+2. Install dependencies.
+3. Create required documentation and logging files.
+4. Validate build and development startup.
+
+### Actions Taken
+- Ran Plasmo initialization in the project root.
+- Installed dependencies with `npm install`.
+- Added and updated documentation files:
+  - `README.md`
+  - `docs/product.md`
+  - `codex/working-rules.md`
+  - `codex/current-session.md`
+  - `codex/logs/session-001.md`
+
+### Validation
+- Ran `npm run build` successfully.
+- Started `npm run dev` and confirmed startup and extension re-package.
+- Verified MV3 output in `build/chrome-mv3-dev/manifest.json`.
+
+### Result
+Success.
+
+## Step 2
+
+### User Instruction
+```text
+[Translated from Chinese] The network had issues. Please retry.
+```
+
+### Understanding
+Retry setup actions that previously failed due to network instability.
+
+### Plan
+1. Check scaffold state.
+2. Retry dependency installation if needed.
+3. Continue validation.
+
+### Actions Taken
+- Checked repository status and confirmed scaffold files existed.
+- Retried dependency installation with `npm install`.
+
+### Validation
+`npm install` completed successfully and `node_modules` was present.
+
+### Result
+Success.
+
+## Step 3
+
+### User Instruction
+```text
+Create a repository-level AGENTS.md and initialize the logging system for this project.
+
+Requirements:
+
+1. Create the following files:
+   - AGENTS.md (root)
+   - codex/logs/session-001.md
+   - codex/current-session.md
+   - codex/log-template.md
+
+2. AGENTS.md must enforce:
+   - Every user instruction MUST be recorded
+   - The RAW user instruction MUST be copied verbatim
+   - Logging is mandatory before or during execution
+   - No step can skip logging
+   - Small-step execution only (no large changes)
+
+3. codex/log-template.md must define this exact structure:
+
+   ## Step N
+
+   ### User Instruction
+   <RAW user instruction, DO NOT rewrite>
+
+   ### Understanding
+   ...
+
+   ### Plan
+   ...
+
+   ### Actions Taken
+   ...
+
+   ### Validation
+   ...
+
+   ### Result
+   ...
+
+4. codex/current-session.md must contain:
+   - current session file name
+   - next step number
+
+5. If session-001.md is newly created, initialize Step 1 with THIS instruction.
+
+6. Do NOT implement any business logic or project features in this step.
+```
+
+### Understanding
+Create repository-level agent policy and initialize a reusable logging framework without implementing features.
+
+### Plan
+1. Create `AGENTS.md`.
+2. Create `codex/log-template.md`.
+3. Update `codex/current-session.md`.
+4. Ensure `codex/logs/session-001.md` contains the current step records.
+
+### Actions Taken
+- Created `AGENTS.md`.
+- Created `codex/log-template.md`.
+- Updated `codex/current-session.md`.
+- Updated `codex/logs/session-001.md`.
+
+### Validation
+Confirmed required files existed and contained the required sections.
+
+### Result
+Success.
+
+## Step 4
+
+### User Instruction
+```text
+[Translated from Chinese] Search repositories aaif/agents-spec and forrestchang/andrej-karpathy-skills, compare AGENTS.md and CLAUDE.md, and identify what is useful for our AGENTS.md.
+```
+
+### Understanding
+Compare external agent guidance and produce actionable recommendations for this repository's `AGENTS.md`.
+
+### Plan
+1. Fetch both repositories and target files.
+2. Compare structure and behavioral guidance.
+3. Extract high-value rules for this project.
+
+### Actions Taken
+- Attempted to fetch `aaif/agents-spec`; endpoint returned not found.
+- Fetched repository metadata and `CLAUDE.md` from Karpathy skills repository.
+- Fetched `AGENTS.md` from `agentsmd/agents.md` as the comparison baseline.
+
+### Validation
+Confirmed source files were retrievable for comparison scope:
+- `agentsmd/agents.md` -> `AGENTS.md`
+- `multica-ai/andrej-karpathy-skills` -> `CLAUDE.md`
+
+### Result
+Success with adjusted scope.
+
+## Step 5
+
+### User Instruction
+```text
+https://github.com/agentsmd/agents.md
+```
+
+### Understanding
+Use this repository as the canonical AGENTS reference.
+
+### Plan
+1. Adopt `agentsmd/agents.md` as AGENTS baseline.
+2. Continue comparison against Karpathy `CLAUDE.md`.
+
+### Actions Taken
+- Set `agentsmd/agents.md` as the AGENTS source of truth for recommendations.
+
+### Validation
+Verified the repository includes a root `AGENTS.md`.
+
+### Result
+Success.
+
+## Step 6
+
+### User Instruction
+```text
+karpathy does not have agents.md
+```
+
+### Understanding
+Karpathy repository provides behavior guidance in `CLAUDE.md` only.
+
+### Plan
+1. Use Karpathy content as behavioral guidance input.
+2. Map useful parts into this project's `AGENTS.md`.
+
+### Actions Taken
+- Finalized comparison scope to:
+  - `agentsmd/agents.md` for AGENTS structure
+  - Karpathy `CLAUDE.md` for behavior rules
+
+### Validation
+Confirmed Karpathy repository root contains `CLAUDE.md` and no `AGENTS.md`.
+
+### Result
+Success.
+
+## Step 7
+
+### User Instruction
+```text
+[Translated from Chinese] Persist the changes. Ensure all persisted information is in English. Our chat can remain in Chinese.
+```
+
+### Understanding
+Apply the comparison result to repository files and enforce English-only persisted content.
+
+### Plan
+1. Upgrade root `AGENTS.md` with useful rules from both sources.
+2. Convert persisted session log content to English.
+3. Update session pointer metadata.
+
+### Actions Taken
+- Updated `AGENTS.md` with:
+  - Non-negotiable logging rules
+  - Behavioral execution rules (think first, simplicity, surgical changes, goal-driven validation)
+  - Project operations and command baseline
+- Rewrote `codex/logs/session-001.md` in English.
+- Updated `codex/current-session.md` next step metadata.
+
+### Validation
+- Verified all persisted content touched in this step is English.
+- Verified required log files remain present and readable.
+
+### Result
+Success.
+
+## Step 8
+
+### User Instruction
+```text
+[Translated from Chinese] Tell me why this time session-001 deleted 260 lines.
+```
+
+### Understanding
+Explain the cause of the large deletion count reported by the user for `session-001.md` and provide exact diff numbers.
+
+### Plan
+1. Inspect git diff stats for `codex/logs/session-001.md`.
+2. Inspect the patch context to identify what was removed and why.
+3. Report exact numbers and root cause.
+
+### Actions Taken
+- Ran `git diff --numstat -- codex/logs/session-001.md`.
+- Ran `git diff --shortstat -- codex/logs/session-001.md`.
+- Inspected top part of `git diff` patch for this file.
+
+### Validation
+- Current measured diff shows `154 insertions` and `143 deletions` for this file.
+- Patch confirms the file content was rewritten from a mixed-language, long raw transcript version into an English-normalized structure.
+
+### Result
+Success: root cause identified and quantified.
+
+## Step 9
+
+### User Instruction
+```text
+[Translated from Chinese] What should we do next?
+```
+
+### Understanding
+Provide the single most valuable next action for this repository after setting up logging and agent rules.
+
+### Plan
+1. Recommend one concrete, high-leverage next step.
+2. Keep scope small and implementation-ready.
+
+### Actions Taken
+- Reviewed current project state: AGENTS rules and logging files are present, but enforcement is manual.
+
+### Validation
+- Identified the highest current risk: process drift (missing logs or incorrect step metadata) without automated checks.
+
+### Result
+Success: ready to propose the next single step.
+
+## Step 10
+
+### User Instruction
+```text
+[Translated from Chinese] Continue.
+```
+
+### Understanding
+Proceed with the previously proposed next action: implement automated logging compliance checks and integrate them into CI.
+
+### Plan
+1. Add a local validator script for `codex/current-session.md` and the active session log.
+2. Add an npm script to run the validator.
+3. Add a GitHub Actions workflow to run the validator on push and pull requests.
+4. Update README with a short usage section.
+
+### Actions Taken
+- Started implementation.
+
+### Validation
+- Work was interrupted by the user before code changes were applied.
+
+### Result
+Paused by user.
+
+## Step 11
+
+### User Instruction
+```text
+[Translated from Chinese] Why do we need to write code to handle MD files? Please explain.
+```
+
+### Understanding
+Explain the rationale for adding a Markdown/log validation script instead of relying on manual process checks.
+
+### Plan
+1. Clarify the problem with manual-only enforcement.
+2. Explain why lightweight code checks provide better reliability.
+3. Provide pragmatic tradeoffs and when not to automate.
+
+### Actions Taken
+- Reviewed the current repository process and identified that logging enforcement is currently manual.
+
+### Validation
+- Explanation is aligned with the previously proposed next step (automated compliance checks).
+
+### Result
+Success.
+
+## Step 12
+
+### User Instruction
+```text
+[Translated from Chinese] Great. Start your work.
+```
+
+### Understanding
+Execute the approved next step: implement automated logging compliance validation for repository Markdown log files and integrate it with CI.
+
+### Plan
+1. Implement a lightweight Node.js validator for log structure consistency.
+2. Add an npm command to run the validator locally.
+3. Add a GitHub Actions workflow to enforce validation on PRs/pushes.
+4. Update README with usage instructions.
+
+### Actions Taken
+- Added `scripts/validate-logs.mjs` to validate logging compliance:
+  - checks `codex/current-session.md` required fields and pointer format
+  - checks `codex/log-template.md` exact required structure
+  - checks active session log step continuity and required sections
+  - checks for non-English CJK characters in persisted log files
+- Added npm script in `package.json`:
+  - `check:logs`
+- Added CI workflow:
+  - `.github/workflows/logging-compliance.yml`
+- Updated `README.md` with local log compliance usage.
+
+### Validation
+- Ran `npm run check:logs`.
+- Command completed successfully with message: `Logging compliance check passed.`
+
+### Result
+Success.
+
+## Step 13
+
+### User Instruction
+```text
+[Translated from Chinese] Before committing, I want GitHub handling to be an independent subagent or skill. Do you think I am right?
+```
+
+### Understanding
+Evaluate whether GitHub-related operations should be isolated as a dedicated capability before commit and provide a practical recommendation.
+
+### Plan
+1. Compare subagent-based delegation vs skill-based workflow standardization.
+2. Recommend a default approach for this repository.
+3. Provide clear criteria for when to use each model.
+
+### Actions Taken
+- Assessed the current repository workflow and risk points around commit/push/PR handling.
+
+### Validation
+- Recommendation is aligned with the repository goal of auditable and consistent execution.
+
+### Result
+Success.
+
+## Step 14
+
+### User Instruction
+```text
+[Translated from Chinese] Good. Create the skill this way.
+```
+
+### Understanding
+Create a reusable skill that standardizes branch naming, pre-commit checks, commit/push flow, and safe GitHub handoff behavior.
+
+### Plan
+1. Read the skill-creator guidance and follow its expected structure.
+2. Create a concise skill document with strict, actionable steps.
+3. Include branch naming policy and interactive naming recommendation logic.
+4. Validate file paths and provide usage notes.
+
+### Actions Taken
+- Initialized skill folder: `skills/github-release-flow`.
+- Implemented workflow guidance in `skills/github-release-flow/SKILL.md`.
+- Added deterministic branch name helper:
+  - `skills/github-release-flow/scripts/suggest_branch_name.py`
+- Added naming reference:
+  - `skills/github-release-flow/references/branch-naming.md`
+- Generated UI metadata:
+  - `skills/github-release-flow/agents/openai.yaml`
+
+### Validation
+- Ran:
+  - `python3 .../quick_validate.py skills/github-release-flow`
+  - Result: `Skill is valid!`
+- Ran:
+  - `python3 skills/github-release-flow/scripts/suggest_branch_name.py --type chore --scope logging --summary "add github release flow skill"`
+  - Result: generated normalized branch name.
+
+### Result
+Success.
+
+## Step 15
+
+### User Instruction
+```text
+[Translated from Chinese] What is this command useful for? There is no way I can remember such a long command.
+```
+
+### Understanding
+Explain the purpose of the branch suggestion helper and provide a practical, easy-to-remember usage approach.
+
+### Plan
+1. Clarify why the helper exists.
+2. Provide a short, memorable invocation pattern.
+3. Propose optional simplification if needed.
+
+### Actions Taken
+- Reviewed helper intent and current invocation style.
+
+### Validation
+- Response focuses on workflow usability without changing business logic.
+
+### Result
+Success.
+
+## Step 16
+
+### User Instruction
+```text
+[Translated from Chinese] How do I activate this skill every time?
+```
+
+### Understanding
+Explain reliable ways for the user to trigger the newly created `github-release-flow` skill in regular usage.
+
+### Plan
+1. Provide an explicit trigger pattern.
+2. Provide a reusable message template for repeated usage.
+3. Clarify auto-trigger vs forced trigger behavior.
+
+### Actions Taken
+- Prepared an explicit usage pattern based on skill naming and deterministic trigger phrasing.
+
+### Validation
+- Guidance is actionable and does not require additional code changes.
+
+### Result
+Success.
+
+## Step 17
+
+### User Instruction
+```text
+[Translated from Chinese] /ship is better. Implement it, then give me several samples, and write those samples into the skill README.
+```
+
+### Understanding
+Adopt `/ship` as the primary trigger phrase for the `github-release-flow` skill and add practical usage samples in a skill-level README file.
+
+### Plan
+1. Update skill instructions to define `/ship <one-line-task>` as the preferred trigger.
+2. Add sample prompts for typical commit/push/PR scenarios.
+3. Create a skill README containing those samples.
+4. Validate repository log compliance after updates.
+
+### Actions Taken
+- Updated `skills/github-release-flow/SKILL.md`:
+  - Added `/ship <one-line-task-intent>` as the primary trigger phrase.
+  - Added trigger behavior and missing-intent handling.
+  - Updated frontmatter description to include `/ship` usage context.
+- Added `skills/github-release-flow/README.md` with concrete `/ship` samples.
+- Updated `skills/github-release-flow/agents/openai.yaml` default prompt to `/ship` style.
+
+### Validation
+- Ran:
+  - `python3 .../quick_validate.py skills/github-release-flow`
+  - Result: `Skill is valid!`
+- Ran:
+  - `npm run check:logs`
+  - Result: `Logging compliance check passed.`
+
+### Result
+Success.
+
+## Step 18
+
+### User Instruction
+```text
+[Translated from Chinese] What does <one-line-task-intent> mean? Is it the intent of a future task?
+```
+
+### Understanding
+Clarify the meaning of the `/ship` placeholder and explain whether it represents a future plan or the current intended delivery for the branch.
+
+### Plan
+1. Define the placeholder in plain terms.
+2. Explain the timing context (current branch objective vs generic future tasking).
+3. Provide concrete examples.
+
+### Actions Taken
+- Prepared a concise explanation aligned with the `/ship` workflow.
+
+### Validation
+- Explanation maps directly to the skill trigger format already defined in the repository.
+
+### Result
+Success.
+
+## Step 19
+
+### User Instruction
+```text
+[Translated from Chinese] Modify AGENTS.md.
+```
+
+### Understanding
+Update repository policy so explanatory/tool-usage conversations that do not change project state are exempt from session logging.
+
+### Plan
+1. Edit `AGENTS.md` logging rules to scope mandatory logging to execution-affecting instructions.
+2. Add explicit exemption cases for explanation-only and usage-guidance conversations.
+3. Keep the rest of the governance unchanged.
+
+### Actions Taken
+- Updated `AGENTS.md`:
+  - Changed rule 1 to: "Every execution-affecting user instruction MUST be recorded."
+  - Added an exemption rule listing explanation-only and non-mutating tool/skill usage guidance conversations.
+
+### Validation
+- Confirmed policy text is present under "Non-Negotiable Logging Rules."
+- Confirmed persisted content remains in English.
+
+### Result
+Success.
+
+## Step 20
+
+### User Instruction
+```text
+[Translated from Chinese] Define a rollover rule: when steps exceed 100, switch to a new file. File numbering must increment from 001 to 002, 003, and so on.
+```
+
+### Understanding
+Formalize session rollover policy and enforce it automatically through repository governance and validation checks.
+
+### Plan
+1. Update `AGENTS.md` with explicit rollover and naming policy.
+2. Update log validation script to enforce session numbering continuity and max 100 steps per session file.
+3. Update README validation notes.
+4. Verify log compliance still passes.
+
+### Actions Taken
+- Updated `AGENTS.md` with session rollover rule:
+  - Step limit per session: 100
+  - Session filename sequence: `session-001.md` -> `session-002.md` -> `session-003.md`
+  - New session starts from `Step 1` and updates `codex/current-session.md`
+- Updated `scripts/validate-logs.mjs` to enforce:
+  - `session-XXX.md` zero-padded naming format
+  - Continuous session file numbering with no gaps
+  - `codex/current-session.md` must point to the latest session file
+  - Max 100 steps per session file
+- Updated `README.md` logging compliance section to document rollover validation.
+
+### Validation
+- Ran `npm run check:logs` after all changes.
+- Validation passed.
+
+### Result
+Success.
+
+## Step 21
+
+### User Instruction
+```text
+/ship
+```
+
+### Understanding
+User triggered the shipping workflow but did not provide the required one-line task intent.
+
+### Plan
+1. Request one-line task intent.
+2. Continue `/ship` flow after intent is provided.
+
+### Actions Taken
+- Paused workflow and requested required input.
+
+### Validation
+- Trigger phrase recognized.
+- Input is incomplete for branch naming and preflight execution.
+
+### Result
+Blocked: waiting for one-line task intent.
+
+## Step 22
+
+### User Instruction
+```text
+/ship commit and push the changes
+```
+
+### Understanding
+Run the shipping workflow for current repository changes: perform preflight checks, use a safe branch (not `main`), commit scoped changes, and push to remote.
+
+### Plan
+1. Run preflight checks (`git status`, current branch, remote setup, log compliance check).
+2. Create and switch to a task branch from `main`.
+3. Stage and commit the requested changes.
+4. Push branch to remote.
+
+### Actions Taken
+- Preflight:
+  - Checked working tree (`git status --short`).
+  - Confirmed current branch was `main`.
+  - Confirmed no `origin` remote configured.
+  - Ran `npm run check:logs` (passed).
+- Suggested branch name via helper:
+  - `chore/workflow-ship-logging-compliance-a`
+- Created and switched branch:
+  - `git checkout -b chore/workflow-ship-logging-compliance-a`
+- Configured remote:
+  - `git remote add origin https://github.com/mikezhangyl/translation-plugin.git`
+- Updated `codex/current-session.md` next step pointer to keep log compliance valid.
+- Re-ran `npm run check:logs` (passed).
+- Staged and committed changes:
+  - `git add .`
+  - `git commit -m "chore(workflow): add logging compliance and /ship release flow"`
+- Pushed branch:
+  - `git push -u origin chore/workflow-ship-logging-compliance-a`
+- Added one follow-up log-only commit to include finalized Step 22 details:
+  - `git commit -m "chore(logs): finalize step 22 ship execution record"`
+  - `git push`
+
+### Validation
+- `npm run check:logs` passed before commit.
+- Push succeeded and upstream tracking was set.
+- Follow-up log-only commit was pushed successfully.
+- Final git status is clean on branch:
+  - `chore/workflow-ship-logging-compliance-a...origin/chore/workflow-ship-logging-compliance-a`
+
+### Result
+Success.
+
+## Step 23
+
+### User Instruction
+```text
+[Translated from Chinese] Do it this way.
+```
+
+### Understanding
+Adopt the agreed best practice in the GitHub release workflow: `/ship` should default to commit + push + create draft PR, support `--no-pr` as an explicit exception, and treat missing PR URL as incomplete workflow.
+
+### Plan
+1. Update `skills/github-release-flow/SKILL.md` to encode default draft PR behavior.
+2. Update skill README samples to include `/ship` default and `/ship --no-pr` exception.
+3. Update skill metadata prompt to reflect default draft PR creation.
+4. Validate skill and repository log compliance.
+
+### Actions Taken
+- Updated `skills/github-release-flow/SKILL.md` to enforce:
+  - Default `/ship` behavior: commit + push + create draft PR.
+  - Explicit exception trigger: `/ship --no-pr <one-line-task-intent>`.
+  - Workflow completion requires PR URL unless `--no-pr` is used.
+- Updated `skills/github-release-flow/README.md` with new `/ship` samples including `--no-pr`.
+- Updated `skills/github-release-flow/agents/openai.yaml` default prompt and summary to match draft-PR-by-default behavior.
+
+### Validation
+- Ran skill structure check:
+  - `python3 .../quick_validate.py skills/github-release-flow`
+  - Result: `Skill is valid!`
+- Ran repository log compliance:
+  - `npm run check:logs`
+  - Result: `Logging compliance check passed.`
+
+### Result
+Success.
+
+## Step 24
+
+### User Instruction
+```text
+[Translated from Chinese] Okay.
+```
+
+### Understanding
+Execute the previously proposed action: run `/ship` under the new default rule and complete commit + push + draft PR creation.
+
+### Plan
+1. Run preflight checks.
+2. Commit pending changes on the current branch.
+3. Push updates to remote.
+4. Create a draft PR and return URL.
+
+### Actions Taken
+- Ran preflight checks:
+  - `git status --short --branch`
+  - `npm run check:logs`
+  - `gh --version`
+  - `gh auth status`
+- Confirmed:
+  - Current branch is `chore/workflow-ship-logging-compliance-a`.
+  - Working tree has expected updates.
+  - Logging compliance check passed.
+  - GitHub CLI is available and authenticated.
+
+### Validation
+Preflight passed. Commit/push/PR creation in progress.
+
+### Result
+In progress.
