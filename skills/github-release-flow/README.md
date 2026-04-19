@@ -39,7 +39,7 @@ Natural language fallback is supported:
 
 - Decide whether to create a new branch or reuse the current branch.
 - Suggest a normalized branch name.
-- Run preflight checks before commit/push.
+- Run preflight checks before commit/push (`npm run check:local`).
 - Keep commit scope focused on the current objective.
 - Create a draft PR by default after push.
 - Merge approved PRs with `/land` using squash by default.

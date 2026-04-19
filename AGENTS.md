@@ -48,13 +48,47 @@ Repository-level rules for engineering execution agents.
 3. Do not add dependencies unless strictly required by the current step.
 4. Do not implement business logic unless explicitly requested.
 
-## 4) Required Log Files
+## 4) Workflow Surface Policy
+
+1. `skills/` is the canonical workflow surface.
+2. `commands/` is compatibility-only and must remain thin shims that delegate to skills.
+3. New workflow logic must be added in skills, not duplicated in command shims.
+4. `/ship` preflight must use `npm run check:local` as the unified local gate.
+
+## 5) Sub-Agent Role Defaults
+
+1. Prefer sub-agent execution for:
+   - local test execution
+   - change review
+2. Keep the main thread concise:
+   - only high-signal pass/fail summary
+   - actionable blocker details
+3. Default role templates in this repository:
+   - `test-runner`: test execution only + failure evidence only
+   - `planner`: planning breakdown only
+   - `code-reviewer`: quality/risk review only
+   - `build-error-resolver`: build/type error fixes only, minimal diffs
+4. Model default for repository agent templates:
+   - use `gpt-5.3-codex` unless a specific step explicitly requires another model.
+   - do not use Claude-specific model labels (for example `sonnet`, `opus`) in this repository's agent templates.
+
+## 6) Skill/Agent Adoption Gate
+
+Before adding any new skill or agent template, it must pass all checks:
+
+1. Directly relevant to translation-plugin engineering efficiency.
+2. Runnable with the current repository command/tooling surface.
+3. No heavy external runtime dependency required.
+4. Clear acceptance checks exist (commands + expected pass/fail outcome).
+5. At most one new skill or one new agent template per iteration.
+
+## 7) Required Log Files
 
 - `codex/logs/session-001.md` (or the active session file)
 - `codex/current-session.md`
 - `codex/log-template.md`
 
-## 5) Step Record Minimum
+## 8) Step Record Minimum
 
 Each step record must follow `codex/log-template.md`:
 

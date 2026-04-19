@@ -1577,3 +1577,316 @@ Proceed by shipping the pending schema-versioning and edge-case harness updates 
 
 ### Result
 Success.
+
+## Step 46
+
+### User Instruction
+```text
+[Translated from Chinese] Before we start, I want to set up the necessary skills and sub-agent workflow, for example local tests should be executed by a sub-agent with a corresponding testing skill.
+```
+
+### Understanding
+Set up repository-level reusable skill infrastructure so local testing can be standardized and delegated, while keeping main-thread context compact.
+
+### Plan
+1. Add a dedicated local testing skill with `/test` trigger and scope mapping.
+2. Add a single local verification command in `package.json`.
+3. Integrate the new command into `/ship` preflight in GitHub release skill.
+4. Validate local checks and logging compliance.
+
+### Actions Taken
+- Updated `package.json`:
+  - Added `check:local` script:
+    - `npm run harness:test && npm run check:logs`
+- Added new testing skill:
+  - `skills/local-test-flow/SKILL.md`
+  - `skills/local-test-flow/README.md`
+  - `skills/local-test-flow/agents/openai.yaml`
+  - Defined `/test <scope>` with mappings:
+    - `quick` -> `npm run check:logs`
+    - `harness` -> `npm run harness:test`
+    - `pre-ship` -> `npm run check:local`
+  - Included sub-agent-first execution rule and compact output contract.
+- Updated GitHub release skill to use the new unified preflight command:
+  - `skills/github-release-flow/SKILL.md`
+  - `skills/github-release-flow/README.md`
+  - Preflight now runs `npm run check:local`.
+
+### Validation
+- Ran `npm run check:local` (passed).
+- Ran `npm run check:logs` (passed).
+
+### Result
+Success.
+
+## Step 47
+
+### User Instruction
+```text
+/ship
+```
+
+### Understanding
+Ship the newly added local-test skill and preflight integration updates by committing and pushing the current branch, then creating a draft PR.
+
+### Plan
+1. Run preflight checks (`check:local`, `check:logs`, branch/status).
+2. Check whether a PR already exists for current branch.
+3. Commit all scoped changes.
+4. Push branch to origin.
+5. Create draft PR if none exists and return PR URL.
+
+### Actions Taken
+- Ran preflight:
+  - `git branch --show-current`
+  - `git status --short --branch`
+  - `npm run check:local`
+  - `npm run check:logs`
+- Checked existing PR:
+  - `gh pr list --head feat/translation-plugin-mvp ...`
+  - Confirmed no existing PR for this branch.
+- Committed scoped changes:
+  - `git add .`
+  - `git commit -m "chore(skill): add local test flow and preflight gate"`
+- Pushed branch:
+  - `git push -u origin feat/translation-plugin-mvp`
+- Created draft PR:
+  - `gh pr create --repo mikezhangyl/translation-plugin --base main --head feat/translation-plugin-mvp --draft --title "chore(skill): add local test flow and preflight gate" --body "..."`
+
+### Validation
+- `npm run check:local` passed before commit.
+- `npm run check:logs` passed before commit.
+- Push succeeded.
+- Draft PR created successfully.
+
+### Result
+Success.
+
+## Step 48
+
+### User Instruction
+```text
+[Translated] Implement the full migration and transformation plan: enforce skills-first governance, keep commands as compatibility shims, add verify/review/plan/context capabilities, define sub-agent role templates, and establish phased adoption gates and acceptance standards.
+```
+
+### Understanding
+Implement the locked migration plan in the repository by delivering Phase A capabilities immediately and laying down concrete Phase B/C governance artifacts without introducing heavy external systems.
+
+### Plan
+1. Update repository governance (`AGENTS.md`) for skills-first, command compatibility, sub-agent defaults, and adoption gates.
+2. Add Phase A skills:
+   - `verify-flow`
+   - `review-flow`
+3. Add Phase B skills:
+   - `plan-flow`
+   - `context-policy`
+4. Add compatibility command shims:
+   - `/ship`, `/land`, `/test`, `/verify`, `/review`, `/plan`
+5. Add minimal sub-agent role templates:
+   - `planner`
+   - `code-reviewer`
+   - `build-error-resolver`
+6. Add migration roadmap doc and update README workflow surface docs.
+7. Add a unified verification command and validate all checks.
+
+### Actions Taken
+- Updated governance:
+  - `AGENTS.md`
+  - Added `Workflow Surface Policy`, `Sub-Agent Role Defaults`, and `Skill/Agent Adoption Gate`.
+- Updated scripts:
+  - `package.json`
+  - Added `check:verify` (`check:local -> build -> package`).
+- Added skills:
+  - `skills/verify-flow/SKILL.md`
+  - `skills/verify-flow/README.md`
+  - `skills/verify-flow/agents/openai.yaml`
+  - `skills/review-flow/SKILL.md`
+  - `skills/review-flow/README.md`
+  - `skills/review-flow/agents/openai.yaml`
+  - `skills/plan-flow/SKILL.md`
+  - `skills/plan-flow/README.md`
+  - `skills/plan-flow/agents/openai.yaml`
+  - `skills/context-policy/SKILL.md`
+  - `skills/context-policy/README.md`
+  - `skills/context-policy/agents/openai.yaml`
+- Added command compatibility layer:
+  - `commands/README.md`
+  - `commands/ship.md`
+  - `commands/land.md`
+  - `commands/test.md`
+  - `commands/verify.md`
+  - `commands/review.md`
+  - `commands/plan.md`
+- Added sub-agent role templates:
+  - `agents/planner.md`
+  - `agents/code-reviewer.md`
+  - `agents/build-error-resolver.md`
+- Added roadmap and updated docs:
+  - `docs/skills-agent-migration-roadmap.md`
+  - `README.md` workflow surface section.
+
+### Validation
+- Ran `npm run check:local` (passed).
+- Ran `npm run check:verify` (passed).
+- Ran `npm run check:logs` (passed).
+
+### Result
+Success.
+
+## Step 49
+
+### User Instruction
+```text
+[Translated from Chinese] Continue.
+```
+
+### Understanding
+Continue by shipping the completed skills-first migration changes on the current feature branch and updating the existing draft PR.
+
+### Plan
+1. Run preflight checks (`check:local`, `check:verify`, `check:logs`).
+2. If checks are stable, commit scoped changes.
+3. Push current branch.
+4. Verify and update existing PR.
+
+### Actions Taken
+- Ran preflight in parallel initially:
+  - `npm run check:local`
+  - `npm run check:verify`
+  - `npm run check:logs`
+- Observed one transient failure in `check:local` due to report-file contention when harness checks were run concurrently.
+- Re-ran preflight sequentially for stability:
+  - `npm run check:local`
+  - `npm run check:logs`
+- Prepared release changes for commit/push on `feat/translation-plugin-mvp`.
+- Committed scoped changes:
+  - `git add .`
+  - `git commit -m "chore(workflow): add skills-first shims and agent templates"`
+- Pushed branch:
+  - `git push`
+- Verified PR update:
+  - `gh pr view 4 --repo mikezhangyl/translation-plugin --json number,url,state,isDraft,headRefName,title`
+
+### Validation
+- `npm run check:local` passed in sequential run.
+- `npm run check:verify` passed.
+- `npm run check:logs` passed.
+- Push succeeded.
+- Draft PR #4 remained open and updated.
+
+### Result
+Success.
+
+## Step 50
+
+### User Instruction
+```text
+[Translated from Chinese] Okay.
+```
+
+### Understanding
+Implement default sub-agent execution for `/test` so local testing is handled by a dedicated sub-agent role and main-thread output remains compact.
+
+### Plan
+1. Add a dedicated `test-runner` agent template.
+2. Update `local-test-flow` to make sub-agent delegation the default path.
+3. Update `/test` command shim and governance docs to reflect the default behavior.
+4. Validate local checks and logging compliance.
+
+### Actions Taken
+- Added sub-agent template:
+  - `agents/test-runner.md`
+  - Scope mapping:
+    - `quick` -> `npm run check:logs`
+    - `harness` -> `npm run harness:test`
+    - `pre-ship` -> `npm run check:local`
+- Updated `skills/local-test-flow/SKILL.md`:
+  - Sub-agent delegation is now default (`test-runner`).
+  - Added explicit fallback rule when sub-agent execution is unavailable.
+- Updated `skills/local-test-flow/README.md`:
+  - Added default delegation note.
+- Updated `commands/test.md`:
+  - Explicitly states default delegation to `test-runner`.
+- Updated governance/docs:
+  - `AGENTS.md` now includes `test-runner` in default role templates.
+  - `docs/skills-agent-migration-roadmap.md` includes `test-runner` in Week 2 role lock.
+
+### Validation
+- Ran `npm run check:local` (passed).
+- Ran `npm run check:logs` (passed).
+
+### Result
+Success.
+
+## Step 51
+
+### User Instruction
+```text
+[Translated from Chinese] I found a problem: we are in Codex, and usually use GPT-5.3-Codex rather than model: sonnet.
+```
+
+### Understanding
+Correct model metadata in repository agent templates to align with Codex runtime defaults and avoid Claude-specific model labels.
+
+### Plan
+1. Find all `model: sonnet` references in repository agent templates.
+2. Replace them with `model: gpt-5.3-codex`.
+3. Add explicit model policy in `AGENTS.md` to prevent future drift.
+4. Validate logging compliance.
+
+### Actions Taken
+- Updated agent templates:
+  - `agents/planner.md` -> `model: gpt-5.3-codex`
+  - `agents/code-reviewer.md` -> `model: gpt-5.3-codex`
+  - `agents/build-error-resolver.md` -> `model: gpt-5.3-codex`
+  - `agents/test-runner.md` -> `model: gpt-5.3-codex`
+- Updated governance:
+  - `AGENTS.md`
+  - Added explicit model default policy for repository agent templates:
+    - default to `gpt-5.3-codex`
+    - avoid Claude-specific labels such as `sonnet` and `opus`
+
+### Validation
+- Ran `npm run check:logs` (passed).
+
+### Result
+Success.
+
+## Step 52
+
+### User Instruction
+```text
+[Translated from Chinese] Continue.
+```
+
+### Understanding
+Proceed with shipping the latest workflow updates (default `/test` sub-agent path + Codex model policy alignment) to the active feature branch and refresh PR #4.
+
+### Plan
+1. Run preflight checks (`check:local`, `check:logs`).
+2. Commit all scoped changes.
+3. Push active branch.
+4. Verify PR #4 status after push.
+
+### Actions Taken
+- Ran preflight:
+  - `git branch --show-current`
+  - `git status --short --branch`
+  - `npm run check:local`
+  - `npm run check:logs`
+- Committed scoped changes:
+  - `git add .`
+  - `git commit -m "chore(workflow): default /test to sub-agent and codex model policy"`
+- Pushed branch:
+  - `git push`
+- Verified PR update:
+  - `gh pr view 4 --repo mikezhangyl/translation-plugin --json number,url,state,isDraft,headRefName,title`
+
+### Validation
+- `npm run check:local` passed.
+- `npm run check:logs` passed.
+- Push succeeded.
+- Draft PR #4 remained open and updated.
+
+### Result
+Success.
