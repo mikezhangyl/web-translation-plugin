@@ -1152,10 +1152,23 @@ Ship current deep-diff harness updates to the existing draft PR #2 by committing
 4. Verify PR #2 remains draft and points to updated head.
 
 ### Actions Taken
-- Started shipping workflow.
+- Ran preflight:
+  - `git status --short --branch`
+  - `git branch --show-current`
+  - `npm run harness:test`
+  - `npm run check:logs`
+- Committed scoped changes:
+  - `git commit -m "feat(harness): add deep-diff comparison and second scenario"`
+- Pushed active branch:
+  - `git push`
+- Verified existing Draft PR #2 was updated (same branch head advanced):
+  - `gh pr view 2 --repo mikezhangyl/translation-plugin --json number,url,state,isDraft,headRefName,title`
 
 ### Validation
-In progress.
+- `harness:test` passed before commit.
+- `check:logs` passed before commit.
+- Push succeeded.
+- PR #2 remains `OPEN` and `isDraft=true`.
 
 ### Result
-In progress.
+Success.
