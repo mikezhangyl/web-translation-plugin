@@ -2262,3 +2262,111 @@ User asked to continue by syncing the final pending session-log change to the al
 
 ### Result
 In progress.
+
+## Step 62
+
+### User Instruction
+```text
+[Translated from Chinese] Continue.
+```
+
+### Understanding
+User asked to continue development after merging PR `#6`. The next practical step is making translation provider credentials configurable in the extension UI instead of relying only on environment variables.
+
+### Plan
+1. Add shared translation settings definitions.
+2. Make background translation loading read from `chrome.storage.local`.
+3. Replace popup template with a translation settings form.
+4. Add explicit `storage` permission in extension manifest config.
+5. Validate build and tests.
+
+### Actions Taken
+- Added shared settings model and keys:
+  - `lib/translation-settings.ts`
+- Updated translation service defaults:
+  - `lib/translation-service.ts`
+  - Reused shared `DEFAULT_DEEPL_API_URL`.
+- Updated background runtime behavior:
+  - `background.ts`
+  - Added storage-backed settings loading.
+  - Added runtime dependency construction from saved settings.
+- Replaced popup implementation:
+  - `popup.tsx`
+  - Added form fields for Azure key/region and DeepL key/apiUrl.
+  - Added load/save/clear actions using `chrome.storage.local`.
+- Updated manifest config:
+  - `package.json`
+  - Added `storage` permission.
+- Updated docs:
+  - `README.md`
+  - Added popup configuration usage and precedence note.
+
+### Validation
+- Ran `npm run test:ui-logic` (passed).
+- Ran `npm run build` (passed).
+- Ran `npm run check:local` (passed).
+- Ran `npm run test:e2e` (passed).
+
+### Result
+Success.
+
+## Step 63
+
+### User Instruction
+```text
+[Translated from Chinese] Yes, from now on create a new branch first and then start working. Update agents.md to ensure this.
+```
+
+### Understanding
+User requested a repository-level governance update to enforce branch-first execution so implementation work never starts directly on `main`.
+
+### Plan
+1. Add an explicit branch-first rule in `AGENTS.md`.
+2. Define allowed actions on `main` and disallowed implementation behavior.
+3. Validate logging compliance.
+
+### Actions Taken
+- Updated repository governance:
+  - `AGENTS.md`
+  - Added "Branch-first execution rule" under Project Operations:
+    - create/switch to feature branch before file-changing work
+    - no direct implementation on `main`
+    - `main` limited to read-only exploration and branch/PR hygiene
+
+### Validation
+- Ran `npm run check:logs` after the update (passed).
+
+### Result
+Success.
+
+## Step 64
+
+### User Instruction
+```text
+[Translated from Chinese] 1. Agree, change it. 2. Agree, but the main agent must explicitly highlight to the user that fallback handling is being used because sub-agent startup failed. 3. Agree. 4. Agree. 5. Agree. 6. Agree.
+```
+
+### Understanding
+User approved all six AGENTS.md review items and requested immediate repository-rule updates, including explicit degraded-mode warning behavior when `/test` falls back from sub-agent execution.
+
+### Plan
+1. Update `AGENTS.md` to apply all six accepted changes.
+2. Keep changes surgical and policy-only (no business feature changes).
+3. Validate log consistency and update session pointer metadata.
+
+### Actions Taken
+- Updated `AGENTS.md`:
+  - Clarified logging scope to file-changing instructions.
+  - Added precedence/conflict policy (`user instruction > AGENTS.md > skills`).
+  - Relaxed business-logic wording to scope-based restriction.
+  - Added branch reuse policy.
+  - Updated `/test` fallback rule to require explicit authorization and mandatory `DEGRADED MODE` warning with failure reason.
+  - Changed required log file wording to active `session-XXX.md` instead of emphasizing `session-001.md`.
+  - Renumbered section headers after inserting precedence section.
+
+### Validation
+- Verified updated rule text in `AGENTS.md` reflects all six approved points.
+- Updated session tracking metadata for next step in `codex/current-session.md`.
+
+### Result
+Success.

@@ -7,7 +7,7 @@ Repository-level rules for engineering execution agents.
 1. Only file-changing instructions MUST be recorded in session logs.
    - Record when the request edits files, creates/deletes files, or otherwise changes repository state.
    - Do not record when the request is only explanation, clarification, Q&A, or usage guidance with no repository mutation.
-2. Logging is mandatory before or during execution.
+2. For file-changing instructions, logging is mandatory before or during execution.
 3. No step can skip logging.
 4. Persisted log content in this repository MUST be in English.
 5. If the user instruction is not in English, record a faithful English translation and mark it as translated.
@@ -37,7 +37,16 @@ Repository-level rules for engineering execution agents.
 4. Goal-driven execution.
    Define verifiable success criteria, execute, then validate with concrete checks.
 
-## 3) Project Operations (This Repository)
+## 3) Instruction Precedence and Conflict Resolution
+
+1. Conflict precedence order:
+   - explicit user instruction in current turn
+   - this `AGENTS.md`
+   - skill-level defaults/templates
+2. If `AGENTS.md` and a skill conflict, follow `AGENTS.md`.
+3. If current-turn user instruction conflicts with a default rule in this file, follow the user instruction and document the override in the session log.
+
+## 4) Project Operations (This Repository)
 
 1. Stack baseline: Plasmo + React + TypeScript + Manifest V3.
 2. Standard commands:
@@ -46,16 +55,23 @@ Repository-level rules for engineering execution agents.
    - `npm run build`
    - `npm run package`
 3. Do not add dependencies unless strictly required by the current step.
-4. Do not implement business logic unless explicitly requested.
+4. Do not implement unrelated business logic outside the current requested scope.
+5. Branch-first execution rule:
+   - Before any file-changing work, create/switch to a feature branch.
+   - Do not start implementation on `main`.
+   - Allowed work on `main` is read-only exploration plus branch/PR hygiene (`checkout`, `pull`, merge sync).
+6. Branch reuse rule:
+   - Reuse the current feature branch while the same in-progress task is not merged.
+   - Create a new feature branch when starting a distinct new task or after the previous task is merged.
 
-## 4) Workflow Surface Policy
+## 5) Workflow Surface Policy
 
 1. `skills/` is the canonical workflow surface.
 2. `commands/` is compatibility-only and must remain thin shims that delegate to skills.
 3. New workflow logic must be added in skills, not duplicated in command shims.
 4. `/ship` preflight must use `npm run check:local` as the unified local gate.
 
-## 5) Sub-Agent Role Defaults
+## 6) Sub-Agent Role Defaults
 
 1. Prefer sub-agent execution for:
    - local test execution
@@ -71,12 +87,13 @@ Repository-level rules for engineering execution agents.
 4. `/test` execution policy:
    - `/test` must run through `test-runner` sub-agent.
    - Main thread should not execute test commands directly by default.
-   - If sub-agent execution is unavailable, return `BLOCKED` and request explicit fallback authorization.
+   - If sub-agent startup/execution fails, request explicit fallback authorization.
+   - After authorization, main-agent fallback is allowed but MUST display a clear `DEGRADED MODE` warning that includes the failure reason.
 5. Model default for repository agent templates:
    - use `gpt-5.3-codex` unless a specific step explicitly requires another model.
    - do not use Claude-specific model labels (for example `sonnet`, `opus`) in this repository's agent templates.
 
-## 6) Skill/Agent Adoption Gate
+## 7) Skill/Agent Adoption Gate
 
 Before adding any new skill or agent template, it must pass all checks:
 
@@ -86,13 +103,13 @@ Before adding any new skill or agent template, it must pass all checks:
 4. Clear acceptance checks exist (commands + expected pass/fail outcome).
 5. At most one new skill or one new agent template per iteration.
 
-## 7) Required Log Files
+## 8) Required Log Files
 
-- `codex/logs/session-001.md` (or the active session file)
+- `codex/logs/session-XXX.md` (the active session file referenced by `codex/current-session.md`)
 - `codex/current-session.md`
 - `codex/log-template.md`
 
-## 8) Step Record Minimum
+## 9) Step Record Minimum
 
 Each step record must follow `codex/log-template.md`:
 
