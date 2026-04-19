@@ -37,6 +37,16 @@ const scenarios = [
         expected: null
       }
     ]
+  },
+  {
+    path: "harness/scenarios/dry-run.translation.edge-array-type-mismatch.json",
+    id: "dry-run.translation.edge-array-type-mismatch",
+    expectMatch: false,
+    expectDiffIncludes: ["metadata.confidence", "metadata.tags"],
+    expectDifferenceValues: [
+      { path: "metadata.confidence", actual: 1, expected: "1" },
+      { path: "metadata.tags", actual: undefined, expected: ["demo"] }
+    ]
   }
 ]
 
@@ -71,6 +81,11 @@ for (const scenario of scenarios) {
 
   if (report.scenarioId !== scenario.id) {
     throw new Error(`Positive smoke failed: unexpected scenarioId ${report.scenarioId}`)
+  }
+  if (report.scenarioSchemaVersion !== "1.0") {
+    throw new Error(
+      `Positive smoke failed: expected scenarioSchemaVersion=1.0, got ${report.scenarioSchemaVersion}`
+    )
   }
 
   if (typeof report.comparison?.match !== "boolean") {
@@ -119,4 +134,6 @@ for (const scenario of scenarios) {
   }
 }
 
-console.log("Harness positive smoke passed for baseline, variant, and edge-null-missing scenarios.")
+console.log(
+  "Harness positive smoke passed for baseline, variant, edge-null-missing, and edge-array-type-mismatch scenarios."
+)

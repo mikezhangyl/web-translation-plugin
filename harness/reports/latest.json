@@ -1,9 +1,10 @@
 {
   "harness": "translation-plugin-harness",
-  "scenarioId": "dry-run.translation.edge-null-missing",
+  "scenarioSchemaVersion": "1.0",
+  "scenarioId": "dry-run.translation.edge-array-type-mismatch",
   "mode": "dry-run",
-  "startedAt": "2026-04-19T06:10:50.486Z",
-  "completedAt": "2026-04-19T06:10:50.487Z",
+  "startedAt": "2026-04-19T06:43:51.309Z",
+  "completedAt": "2026-04-19T06:43:51.310Z",
   "status": "passed",
   "checks": [
     {
@@ -21,26 +22,25 @@
   ],
   "artifacts": {
     "inputPath": "harness/fixtures/input.sample.json",
-    "expectedOutputPath": "harness/fixtures/output.edge-null-missing.json"
+    "expectedOutputPath": "harness/fixtures/output.edge-array-type-mismatch.json"
   },
   "comparison": {
     "match": false,
     "diffKeys": [
-      "status",
-      "metadata"
+      "metadata.confidence",
+      "metadata.tags"
     ],
     "differences": [
       {
-        "path": "status",
-        "actual": "actual"
+        "path": "metadata.confidence",
+        "actual": 1,
+        "expected": "1"
       },
       {
-        "path": "metadata",
-        "actual": {
-          "generator": "harness-dry-run",
-          "confidence": 1
-        },
-        "expected": null
+        "path": "metadata.tags",
+        "expected": [
+          "demo"
+        ]
       }
     ],
     "actual": {
@@ -55,7 +55,14 @@
     "expected": {
       "requestId": "sample-001",
       "translatedText": "Hello harness",
-      "metadata": null
+      "status": "actual",
+      "metadata": {
+        "generator": "harness-dry-run",
+        "confidence": "1",
+        "tags": [
+          "demo"
+        ]
+      }
     }
   },
   "sample": {
@@ -68,6 +75,7 @@
     "expectedPreviewKeys": [
       "requestId",
       "translatedText",
+      "status",
       "metadata"
     ]
   }

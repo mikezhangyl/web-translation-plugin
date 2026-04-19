@@ -46,7 +46,9 @@ Current built-in scenarios:
 - `dry-run.translation.baseline` (intentionally mismatch sample, demonstrates diff output)
 - `dry-run.translation.variant` (intentionally matched sample)
 - `dry-run.translation.edge-null-missing` (edge case: missing key + null value handling)
+- `dry-run.translation.edge-array-type-mismatch` (edge case: nested array presence + type mismatch)
 - `dry-run.translation.invalid-extra-field` (intentionally invalid schema, for negative smoke test)
+- `dry-run.translation.invalid-unsupported-version` (invalid schemaVersion, for negative smoke test)
 
 Diff output uses nested paths, for example:
 
@@ -60,6 +62,7 @@ Value-level diff output is also available in `comparison.differences`, each entr
 
 Scenario loading now enforces strict schema validation from
 `harness/contracts/scenario.schema.json` (including `additionalProperties: false`).
+It also enforces runtime version gating for `schemaVersion` (currently supports `1.0`).
 
 ## Structure
 

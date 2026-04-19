@@ -1,0 +1,10 @@
+{
+  "schemaVersion": "1.0",
+  "id": "dry-run.translation.edge-array-type-mismatch",
+  "description": "Edge case: nested array presence and type mismatch under metadata",
+  "mode": "dry-run",
+  "fixture": {
+    "inputPath": "harness/fixtures/input.sample.json",
+    "expectedOutputPath": "harness/fixtures/output.edge-array-type-mismatch.json"
+  }
+}

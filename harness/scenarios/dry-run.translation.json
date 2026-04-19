@@ -1,9 +1,11 @@
 {
+  "schemaVersion": "1.0",
   "id": "dry-run.translation.baseline",
   "description": "Validate harness plumbing with deterministic fixture files only.",
   "mode": "dry-run",
   "fixture": {
     "inputPath": "harness/fixtures/input.sample.json",
     "expectedOutputPath": "harness/fixtures/output.sample.json"
-  }
+  },
+  "schemaVersion": "1.0"
 }

@@ -24,8 +24,13 @@ Runnable minimal harness scaffold:
 - Report output path available (`harness/reports/latest.json`).
 - Strict scenario schema validation enabled in runner
   (`harness/contracts/scenario.schema.json`).
+- Scenario schema versioning gate enabled in runner:
+  - required `schemaVersion` in scenario files
+  - supported versions: `1.0`
 - Negative schema smoke case available
   (`harness/scenarios/invalid.extra-field.json`).
+- Negative unsupported-version smoke case available
+  (`harness/scenarios/invalid.unsupported-version.json`).
 - Comparison payload available in reports:
   - `comparison.match`
   - `comparison.diffKeys` (nested path format, for example `metadata.generator`)
@@ -35,6 +40,6 @@ Runnable minimal harness scaffold:
 
 ## Next Suggested Build Order
 
-1. Add optional schema versioning strategy for future harness contract evolution.
-2. Add additional fixture-level edge cases for nested arrays and type mismatches.
-3. Add report retention/cleanup policy for CI artifacts.
+1. Add report retention/cleanup policy for CI artifacts.
+2. Define deprecation policy when moving from scenario schema `1.x` to `2.x`.
+3. Add scenario contract examples for multi-mode support before introducing new `mode` values.
