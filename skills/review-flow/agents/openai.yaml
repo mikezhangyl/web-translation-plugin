@@ -1,0 +1,4 @@
+interface:
+  display_name: "Review Flow"
+  short_description: "Use /review to produce HIGH/LOW findings and a merge decision."
+  default_prompt: "Review changed files, report HIGH/LOW findings, block on HIGH, and output READY or BLOCKED."

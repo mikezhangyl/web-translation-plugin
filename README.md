@@ -35,12 +35,41 @@ Harness engineering scaffold files are located under:
 - `harness/`
 - `docs/harness-engineering.md`
 
+## Workflow Surfaces
+
+Canonical workflow implementation lives in `skills/`.
+
+Current core skills:
+
+- `skills/github-release-flow`
+- `skills/local-test-flow`
+- `skills/verify-flow`
+- `skills/review-flow`
+- `skills/plan-flow`
+- `skills/context-policy`
+
+Compatibility command shims live in `commands/` and delegate to skills:
+
+- `/ship`, `/land`, `/test`, `/verify`, `/review`, `/plan`
+
+Sub-agent role templates live in `agents/`:
+
+- `planner`
+- `code-reviewer`
+- `build-error-resolver`
+
 ## Logging Compliance
 
 Run log validation locally:
 
 ```bash
 npm run check:logs
+```
+
+Run unified local release gate:
+
+```bash
+npm run check:local
 ```
 
 This validates:

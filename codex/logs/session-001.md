@@ -1661,3 +1661,118 @@ Ship the newly added local-test skill and preflight integration updates by commi
 
 ### Result
 Success.
+
+## Step 48
+
+### User Instruction
+```text
+[Translated] Implement the full migration and transformation plan: enforce skills-first governance, keep commands as compatibility shims, add verify/review/plan/context capabilities, define sub-agent role templates, and establish phased adoption gates and acceptance standards.
+```
+
+### Understanding
+Implement the locked migration plan in the repository by delivering Phase A capabilities immediately and laying down concrete Phase B/C governance artifacts without introducing heavy external systems.
+
+### Plan
+1. Update repository governance (`AGENTS.md`) for skills-first, command compatibility, sub-agent defaults, and adoption gates.
+2. Add Phase A skills:
+   - `verify-flow`
+   - `review-flow`
+3. Add Phase B skills:
+   - `plan-flow`
+   - `context-policy`
+4. Add compatibility command shims:
+   - `/ship`, `/land`, `/test`, `/verify`, `/review`, `/plan`
+5. Add minimal sub-agent role templates:
+   - `planner`
+   - `code-reviewer`
+   - `build-error-resolver`
+6. Add migration roadmap doc and update README workflow surface docs.
+7. Add a unified verification command and validate all checks.
+
+### Actions Taken
+- Updated governance:
+  - `AGENTS.md`
+  - Added `Workflow Surface Policy`, `Sub-Agent Role Defaults`, and `Skill/Agent Adoption Gate`.
+- Updated scripts:
+  - `package.json`
+  - Added `check:verify` (`check:local -> build -> package`).
+- Added skills:
+  - `skills/verify-flow/SKILL.md`
+  - `skills/verify-flow/README.md`
+  - `skills/verify-flow/agents/openai.yaml`
+  - `skills/review-flow/SKILL.md`
+  - `skills/review-flow/README.md`
+  - `skills/review-flow/agents/openai.yaml`
+  - `skills/plan-flow/SKILL.md`
+  - `skills/plan-flow/README.md`
+  - `skills/plan-flow/agents/openai.yaml`
+  - `skills/context-policy/SKILL.md`
+  - `skills/context-policy/README.md`
+  - `skills/context-policy/agents/openai.yaml`
+- Added command compatibility layer:
+  - `commands/README.md`
+  - `commands/ship.md`
+  - `commands/land.md`
+  - `commands/test.md`
+  - `commands/verify.md`
+  - `commands/review.md`
+  - `commands/plan.md`
+- Added sub-agent role templates:
+  - `agents/planner.md`
+  - `agents/code-reviewer.md`
+  - `agents/build-error-resolver.md`
+- Added roadmap and updated docs:
+  - `docs/skills-agent-migration-roadmap.md`
+  - `README.md` workflow surface section.
+
+### Validation
+- Ran `npm run check:local` (passed).
+- Ran `npm run check:verify` (passed).
+- Ran `npm run check:logs` (passed).
+
+### Result
+Success.
+
+## Step 49
+
+### User Instruction
+```text
+[Translated from Chinese] Continue.
+```
+
+### Understanding
+Continue by shipping the completed skills-first migration changes on the current feature branch and updating the existing draft PR.
+
+### Plan
+1. Run preflight checks (`check:local`, `check:verify`, `check:logs`).
+2. If checks are stable, commit scoped changes.
+3. Push current branch.
+4. Verify and update existing PR.
+
+### Actions Taken
+- Ran preflight in parallel initially:
+  - `npm run check:local`
+  - `npm run check:verify`
+  - `npm run check:logs`
+- Observed one transient failure in `check:local` due to report-file contention when harness checks were run concurrently.
+- Re-ran preflight sequentially for stability:
+  - `npm run check:local`
+  - `npm run check:logs`
+- Prepared release changes for commit/push on `feat/translation-plugin-mvp`.
+- Committed scoped changes:
+  - `git add .`
+  - `git commit -m "chore(workflow): add skills-first shims and agent templates"`
+- Pushed branch:
+  - `git push`
+- Verified PR update:
+  - `gh pr view 4 --repo mikezhangyl/translation-plugin --json number,url,state,isDraft,headRefName,title`
+
+### Validation
+- `npm run check:local` passed in sequential run.
+- `npm run check:verify` passed.
+- `npm run check:logs` passed.
+- Push succeeded.
+- Draft PR #4 remained open and updated.
+
+### Result
+Success.
