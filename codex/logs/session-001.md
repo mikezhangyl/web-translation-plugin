@@ -1890,3 +1890,167 @@ Proceed with shipping the latest workflow updates (default `/test` sub-agent pat
 
 ### Result
 Success.
+
+## Step 53
+
+### User Instruction
+```text
+[Translated from Chinese] I provided two reference images: after selecting a word, show a small dot at the lower-right; when hovering over the dot, show a translation panel. Please implement MVP UI based on this design.
+```
+
+### Understanding
+Implement the first business MVP interaction in the browser page content layer: selection-driven trigger dot plus hover-triggered translation card, using dry-run translation content.
+
+### Plan
+1. Add a content script UI entry to run on web pages.
+2. Detect text selection and compute marker position near the selected range.
+3. Render a pink dot trigger at the lower-right of selection.
+4. Show a translation panel on hover and hide with a small delay for stable pointer transitions.
+5. Use dry-run translation payload so UI works before real translation API integration.
+6. Validate build and logging compliance.
+
+### Actions Taken
+- Added content script UI:
+  - `content.tsx`
+- Implemented behaviors:
+  - Detect selection on mouseup/keyup.
+  - Render pink dot near selection (`right + offset`, `bottom + offset`) with viewport clamping.
+  - Show translation card on marker hover.
+  - Keep card visible while hovering marker/card using delayed hide timer.
+  - Hide on invalid selection or escaped state transitions.
+- Implemented dry-run translation content builder:
+  - source word, phonetic placeholder, part-of-speech line, example sentence, and detailed explanation block.
+- Implemented panel visual structure approximating provided references:
+  - service tag/header
+  - source term line
+  - short translation meaning
+  - detailed translation block
+
+### Validation
+- Ran `npm run build` (passed).
+- Ran `npm run check:logs` (passed).
+
+### Result
+Success.
+
+## Step 54
+
+### User Instruction
+```text
+[Translated from Chinese] Add.
+```
+
+### Understanding
+User asked to continue adding the next concrete capability. Based on immediate context, the required addition is automated tests for the newly implemented selection-dot and hover-card MVP UI logic.
+
+### Plan
+1. Extract reusable selection/UI logic into a pure TypeScript module.
+2. Add unit tests for logic boundaries and expected outputs.
+3. Integrate tests into local quality gate (`check:local`).
+4. Validate with test, local gate, and build commands.
+
+### Actions Taken
+- Added reusable logic module:
+  - `lib/selection-ui.ts`
+  - Includes `clamp`, `isLikelyWord`, `computeMarkerPositionFromRect`, and `buildDryRunTranslation`.
+- Refactored content UI to consume shared logic:
+  - `content.tsx`
+- Added Node test suite for MVP logic:
+  - `tests/selection-ui.test.ts`
+  - Covers clamp behavior, word eligibility, marker positioning, and dry-run payload shape.
+- Added test command and local gate integration:
+  - `package.json`
+  - Added `test:ui-logic` and wired it into `check:local`.
+- Added lightweight test runtime dependency:
+  - `tsx` (dev dependency) and updated `package-lock.json`.
+
+### Validation
+- Ran `npm run test:ui-logic` (passed: 5/5 tests).
+- Ran `npm run check:local` (passed).
+- Ran `npm run build` (passed).
+- Ran `npm run check:logs` after final log update (passed).
+
+### Result
+Success.
+
+## Step 55
+
+### User Instruction
+```text
+[Translated from Chinese] Continue.
+```
+
+### Understanding
+Continue from the prior plan and implement browser-level automation for the selection-flow MVP using Playwright, including a stable extension loading path and end-to-end interaction assertions.
+
+### Plan
+1. Add Playwright E2E tooling and test script.
+2. Add selectors needed by E2E assertions.
+3. Add an end-to-end spec that loads the extension and validates selection -> dot -> hover card -> Escape close.
+4. Resolve any extension-loading or test-environment issues until the E2E test passes.
+5. Update documentation and validate local gates.
+
+### Actions Taken
+- Updated UI selectors for testability:
+  - `ui/selection-translator.tsx`
+  - Added `data-testid` for translation dot and card.
+- Added Plasmo content-script entry:
+  - `contents/selection-translator.tsx`
+  - Configured `matches: ["<all_urls>"]`.
+- Prevented duplicate content-script injection:
+  - Moved root `content.tsx` to `ui/selection-translator.tsx` so only the explicit `contents/` entry is injected.
+- Added Playwright E2E setup:
+  - `playwright.config.mjs`
+  - `tests/e2e/selection-flow.spec.ts`
+  - `tests/e2e/fixtures/selection-page.html`
+- Added package scripts and dependency:
+  - `package.json`
+  - Added `test:e2e` script and `@playwright/test`.
+  - Updated `package-lock.json`.
+- Updated docs:
+  - `README.md` E2E section with install and run commands.
+- Environment fixes performed during implementation:
+  - Installed compatible Playwright browsers for local project version (`npx playwright install chromium`).
+  - Corrected extension load target from `build/chrome-mv3-dev` to `build/chrome-mv3-prod` for `npm run test:e2e`.
+  - Switched E2E browser launch to persistent Chromium context with explicit extension args and isolated temp profile.
+
+### Validation
+- Ran `npm run test:e2e` (passed).
+- Ran `npm run check:local` (passed).
+- Ran `npm run check:logs` (passed).
+
+### Result
+Success.
+
+## Step 56
+
+### User Instruction
+```text
+[Translated from Chinese] Keep going.
+```
+
+### Understanding
+Proceed with the next delivery action after E2E stabilization, which is shipping the current branch changes with preflight checks and GitHub sync.
+
+### Plan
+1. Confirm current branch and working tree scope.
+2. Run preflight checks (`check:local` and `test:e2e`).
+3. Commit all scoped changes for the E2E and testability work.
+4. Push to remote feature branch.
+5. Confirm PR status for this branch.
+
+### Actions Taken
+- Confirmed active branch:
+  - `feat/translation-mvp-selection-flow`
+- Reviewed local change scope:
+  - workflow/docs/test files updated and added for Playwright E2E and UI logic tests.
+- Ran preflight:
+  - `npm run check:local` (passed)
+  - `npm run test:e2e` (passed)
+
+### Validation
+- `check:local` passed with ui-logic tests + harness + log validation.
+- `test:e2e` passed for selection dot and hover-card flow.
+
+### Result
+Success.

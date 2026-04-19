@@ -78,3 +78,23 @@ This validates:
 - `codex/log-template.md` exact required structure.
 - Active session log step sequence and required section completeness.
 - Session rollover policy (`session-001.md`, `session-002.md`, `session-003.md`) and max 100 steps per session file.
+
+## E2E Automation (Playwright)
+
+Install Playwright browser once:
+
+```bash
+npx playwright install chromium
+```
+
+Run selection-flow E2E:
+
+```bash
+npm run test:e2e
+```
+
+This test loads the extension from `build/chrome-mv3-prod` and verifies:
+
+- select text -> translation dot appears
+- hover dot -> translation card appears
+- press `Escape` -> translation card closes
