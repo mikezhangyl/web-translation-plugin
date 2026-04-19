@@ -1441,3 +1441,139 @@ Ship the latest CI artifact and edge-case harness test updates by committing and
 
 ### Result
 Success.
+
+## Step 43
+
+### User Instruction
+```text
+[Translated from Chinese] Okay.
+```
+
+### Understanding
+Implement the next harness iteration: introduce scenario schema versioning with runtime gating, and add negative coverage for unsupported versions.
+
+### Plan
+1. Add required `schemaVersion` to the scenario JSON schema.
+2. Update all existing scenarios to use the current version.
+3. Add runner-side supported-version gate and include version in report output.
+4. Add a negative scenario for unsupported schema version.
+5. Extend positive/negative smoke tests and update docs.
+6. Validate harness tests and log compliance.
+
+### Actions Taken
+- Updated schema contract:
+  - `harness/contracts/scenario.schema.json` now requires `schemaVersion`.
+- Updated scenarios to include `"schemaVersion": "1.0"`:
+  - `harness/scenarios/dry-run.translation.json`
+  - `harness/scenarios/dry-run.translation.variant.json`
+  - `harness/scenarios/dry-run.translation.edge-null-missing.json`
+  - `harness/scenarios/invalid.extra-field.json`
+- Added unsupported-version negative scenario:
+  - `harness/scenarios/invalid.unsupported-version.json`
+- Updated runner:
+  - `harness/scripts/run-harness.mjs`
+  - Added `SUPPORTED_SCENARIO_SCHEMA_VERSIONS = ["1.0"]`
+  - Added runtime gate for unsupported `schemaVersion`
+  - Added `scenarioSchemaVersion` into report output
+- Updated smoke tests:
+  - `harness/tests/smoke.positive.mjs` now validates `scenarioSchemaVersion === "1.0"`
+  - `harness/tests/smoke.negative.mjs` now validates both invalid-schema and unsupported-version failures
+- Updated docs:
+  - `harness/README.md`
+  - `harness/scenarios/README.md`
+  - `docs/harness-engineering.md`
+
+### Validation
+- Ran `npm run harness:test:positive` (passed).
+- Ran `npm run harness:test:negative` (passed).
+- Ran `npm run harness:test` in a separate sequential run (passed).
+- Ran `npm run check:logs` (passed).
+
+### Result
+Success.
+
+## Step 44
+
+### User Instruction
+```text
+[Translated from Chinese] Keep going.
+```
+
+### Understanding
+Continue harness hardening by adding additional boundary coverage for nested-array differences and type mismatches in comparison output.
+
+### Plan
+1. Add a new fixture with nested array presence and type mismatch.
+2. Add a corresponding scenario using schema version `1.0`.
+3. Extend positive smoke assertions to cover this scenario.
+4. Update harness docs.
+5. Validate tests and logging compliance.
+
+### Actions Taken
+- Added fixture:
+  - `harness/fixtures/output.edge-array-type-mismatch.json`
+- Added scenario:
+  - `harness/scenarios/dry-run.translation.edge-array-type-mismatch.json`
+- Updated positive smoke suite:
+  - `harness/tests/smoke.positive.mjs`
+  - Added scenario assertions for:
+    - `metadata.confidence` type mismatch (`1` vs `"1"`)
+    - `metadata.tags` missing vs expected nested array
+  - Updated success message.
+- Updated docs:
+  - `harness/README.md`
+  - `docs/harness-engineering.md`
+
+### Validation
+- Ran:
+  - `npm run harness:test:positive`
+  - `npm run harness:test:negative`
+  - `npm run harness:test`
+  - `npm run check:logs`
+- All commands passed.
+
+### Result
+Success.
+
+## Step 45
+
+### User Instruction
+```text
+[Translated from Chinese] Continue.
+```
+
+### Understanding
+Proceed by shipping the pending schema-versioning and edge-case harness updates on the new branch, including commit, push, and PR creation.
+
+### Plan
+1. Run preflight checks (branch/status, harness tests, log compliance).
+2. Check whether a PR already exists for the current branch.
+3. Commit scoped changes.
+4. Push branch to origin.
+5. Create a draft PR if none exists.
+
+### Actions Taken
+- Ran preflight:
+  - `git branch --show-current`
+  - `git status --short --branch`
+  - `npm run harness:test`
+  - `npm run check:logs`
+- Checked existing PR:
+  - Attempted `gh pr view ... --head` (unsupported flag in current gh version).
+  - Switched to `gh pr list --head feat/harness-schema-versioning` and confirmed no existing PR.
+- Committed scoped changes:
+  - `git add .`
+  - `git commit -m "feat(harness): add schema version gate and edge diff scenarios"`
+- Pushed active branch:
+  - `git push -u origin feat/harness-schema-versioning`
+- Created draft PR:
+  - `gh pr create --repo mikezhangyl/translation-plugin --base main --head feat/harness-schema-versioning --draft --title "feat(harness): add schema version gate and edge diff scenarios" --body "..."`
+
+### Validation
+- `npm run harness:test` passed before commit.
+- `npm run check:logs` passed before commit.
+- Branch push succeeded.
+- Draft PR created successfully.
+
+### Result
+Success.

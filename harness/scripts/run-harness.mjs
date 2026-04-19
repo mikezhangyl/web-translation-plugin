@@ -2,6 +2,7 @@ import fs from "node:fs"
 import path from "node:path"
 
 const cwd = process.cwd()
+const SUPPORTED_SCENARIO_SCHEMA_VERSIONS = ["1.0"]
 
 const parseArgs = () => {
   const args = process.argv.slice(2)
@@ -151,6 +152,10 @@ const main = () => {
     schemaErrors.length === 0,
     `Scenario schema validation failed:\n- ${schemaErrors.join("\n- ")}`
   )
+  assert(
+    SUPPORTED_SCENARIO_SCHEMA_VERSIONS.includes(scenario.schemaVersion),
+    `Unsupported scenario schemaVersion '${scenario.schemaVersion}'. Supported: ${SUPPORTED_SCENARIO_SCHEMA_VERSIONS.join(", ")}`
+  )
 
   const inputPath = path.resolve(cwd, scenario.fixture.inputPath)
   const expectedOutputPath = path.resolve(cwd, scenario.fixture.expectedOutputPath)
@@ -175,6 +180,7 @@ const main = () => {
 
   const report = {
     harness: config.name ?? "unnamed-harness",
+    scenarioSchemaVersion: scenario.schemaVersion,
     scenarioId: scenario.id,
     mode: scenario.mode,
     startedAt,

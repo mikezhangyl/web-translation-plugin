@@ -2,8 +2,12 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "title": "Harness Scenario",
   "type": "object",
-  "required": ["id", "description", "mode", "fixture"],
+  "required": ["schemaVersion", "id", "description", "mode", "fixture"],
   "properties": {
+    "schemaVersion": {
+      "type": "string",
+      "minLength": 1
+    },
     "id": {
       "type": "string",
       "minLength": 1
