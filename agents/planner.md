@@ -2,7 +2,7 @@
 name: planner
 description: Break implementation into small, verifiable steps with explicit acceptance criteria and risks.
 tools: ["Read", "Grep", "Glob"]
-model: sonnet
+model: gpt-5.3-codex
 ---
 
 # Planner Role Template

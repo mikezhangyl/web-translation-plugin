@@ -28,6 +28,7 @@ Adopt a skills-first workflow with thin command compatibility and minimal, role-
 ### Week 2: Sub-Agent Role Lock
 
 - Use role templates:
+  - `agents/test-runner.md`
   - `agents/planner.md`
   - `agents/code-reviewer.md`
   - `agents/build-error-resolver.md`

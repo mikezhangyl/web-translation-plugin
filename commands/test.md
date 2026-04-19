@@ -5,6 +5,7 @@ description: Compatibility shim for `/test`. Delegates to `skills/local-test-flo
 # /test (Compatibility Shim)
 
 Use `local-test-flow` skill as the canonical implementation.
+By default, delegate execution to `agents/test-runner.md` and return only summary output.
 
 Supported scopes:
 

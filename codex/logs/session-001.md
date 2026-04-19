@@ -1776,3 +1776,117 @@ Continue by shipping the completed skills-first migration changes on the current
 
 ### Result
 Success.
+
+## Step 50
+
+### User Instruction
+```text
+[Translated from Chinese] Okay.
+```
+
+### Understanding
+Implement default sub-agent execution for `/test` so local testing is handled by a dedicated sub-agent role and main-thread output remains compact.
+
+### Plan
+1. Add a dedicated `test-runner` agent template.
+2. Update `local-test-flow` to make sub-agent delegation the default path.
+3. Update `/test` command shim and governance docs to reflect the default behavior.
+4. Validate local checks and logging compliance.
+
+### Actions Taken
+- Added sub-agent template:
+  - `agents/test-runner.md`
+  - Scope mapping:
+    - `quick` -> `npm run check:logs`
+    - `harness` -> `npm run harness:test`
+    - `pre-ship` -> `npm run check:local`
+- Updated `skills/local-test-flow/SKILL.md`:
+  - Sub-agent delegation is now default (`test-runner`).
+  - Added explicit fallback rule when sub-agent execution is unavailable.
+- Updated `skills/local-test-flow/README.md`:
+  - Added default delegation note.
+- Updated `commands/test.md`:
+  - Explicitly states default delegation to `test-runner`.
+- Updated governance/docs:
+  - `AGENTS.md` now includes `test-runner` in default role templates.
+  - `docs/skills-agent-migration-roadmap.md` includes `test-runner` in Week 2 role lock.
+
+### Validation
+- Ran `npm run check:local` (passed).
+- Ran `npm run check:logs` (passed).
+
+### Result
+Success.
+
+## Step 51
+
+### User Instruction
+```text
+[Translated from Chinese] I found a problem: we are in Codex, and usually use GPT-5.3-Codex rather than model: sonnet.
+```
+
+### Understanding
+Correct model metadata in repository agent templates to align with Codex runtime defaults and avoid Claude-specific model labels.
+
+### Plan
+1. Find all `model: sonnet` references in repository agent templates.
+2. Replace them with `model: gpt-5.3-codex`.
+3. Add explicit model policy in `AGENTS.md` to prevent future drift.
+4. Validate logging compliance.
+
+### Actions Taken
+- Updated agent templates:
+  - `agents/planner.md` -> `model: gpt-5.3-codex`
+  - `agents/code-reviewer.md` -> `model: gpt-5.3-codex`
+  - `agents/build-error-resolver.md` -> `model: gpt-5.3-codex`
+  - `agents/test-runner.md` -> `model: gpt-5.3-codex`
+- Updated governance:
+  - `AGENTS.md`
+  - Added explicit model default policy for repository agent templates:
+    - default to `gpt-5.3-codex`
+    - avoid Claude-specific labels such as `sonnet` and `opus`
+
+### Validation
+- Ran `npm run check:logs` (passed).
+
+### Result
+Success.
+
+## Step 52
+
+### User Instruction
+```text
+[Translated from Chinese] Continue.
+```
+
+### Understanding
+Proceed with shipping the latest workflow updates (default `/test` sub-agent path + Codex model policy alignment) to the active feature branch and refresh PR #4.
+
+### Plan
+1. Run preflight checks (`check:local`, `check:logs`).
+2. Commit all scoped changes.
+3. Push active branch.
+4. Verify PR #4 status after push.
+
+### Actions Taken
+- Ran preflight:
+  - `git branch --show-current`
+  - `git status --short --branch`
+  - `npm run check:local`
+  - `npm run check:logs`
+- Committed scoped changes:
+  - `git add .`
+  - `git commit -m "chore(workflow): default /test to sub-agent and codex model policy"`
+- Pushed branch:
+  - `git push`
+- Verified PR update:
+  - `gh pr view 4 --repo mikezhangyl/translation-plugin --json number,url,state,isDraft,headRefName,title`
+
+### Validation
+- `npm run check:local` passed.
+- `npm run check:logs` passed.
+- Push succeeded.
+- Draft PR #4 remained open and updated.
+
+### Result
+Success.

@@ -2,7 +2,7 @@
 name: code-reviewer
 description: Review changed files for quality and risk, return severity-ranked findings and merge readiness.
 tools: ["Read", "Grep", "Glob", "Bash"]
-model: sonnet
+model: gpt-5.3-codex
 ---
 
 # Code Reviewer Role Template

@@ -64,9 +64,13 @@ Repository-level rules for engineering execution agents.
    - only high-signal pass/fail summary
    - actionable blocker details
 3. Default role templates in this repository:
+   - `test-runner`: test execution only + failure evidence only
    - `planner`: planning breakdown only
    - `code-reviewer`: quality/risk review only
    - `build-error-resolver`: build/type error fixes only, minimal diffs
+4. Model default for repository agent templates:
+   - use `gpt-5.3-codex` unless a specific step explicitly requires another model.
+   - do not use Claude-specific model labels (for example `sonnet`, `opus`) in this repository's agent templates.
 
 ## 6) Skill/Agent Adoption Gate
 

@@ -4,6 +4,10 @@ Use one short command:
 
 `/test <scope>`
 
+Default execution path:
+
+- Delegate to `agents/test-runner.md` and return summary to main thread.
+
 Supported scopes:
 
 1. `quick` -> `npm run check:logs`

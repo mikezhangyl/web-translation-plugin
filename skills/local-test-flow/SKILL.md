@@ -1,12 +1,12 @@
 ---
 name: local-test-flow
-description: Standardize local verification before `/ship` and during implementation. Use `/test` to run focused local checks, preferably via a sub-agent, and return a concise PASS/FAIL report with failing command details.
+description: Standardize local verification before `/ship` and during implementation. Use `/test` to run focused local checks via the `test-runner` sub-agent by default and return concise PASS/FAIL evidence.
 ---
 
 # Local Test Flow
 
 Use this skill whenever local verification is needed.
-Default behavior is to keep main-thread context short by delegating test execution to a sub-agent when available.
+Default behavior is to keep main-thread context short by delegating test execution to the `test-runner` sub-agent.
 
 ## Trigger Phrase
 
@@ -27,20 +27,22 @@ If no scope is provided, default to `pre-ship`.
 - `harness` -> `npm run harness:test`
 - `pre-ship` -> `npm run check:local`
 
-## Sub-Agent Rule
+## Sub-Agent Rule (Default)
 
-When sub-agent delegation is available:
+Default path:
 
-1. Delegate test execution to a sub-agent.
+1. Delegate test execution to `agents/test-runner.md`.
 2. Keep main-thread output short and structured.
 3. Return only high-signal results to the main thread.
 
-If sub-agent delegation is unavailable, run commands directly and keep the same output contract.
+Fallback path:
+
+- If sub-agent execution is unavailable in the runtime, execute commands directly and keep the same output contract.
 
 ## Workflow
 
 1. Resolve requested scope (`quick`, `harness`, `pre-ship`).
-2. Run mapped command(s).
+2. Delegate to `test-runner` with selected scope and mapped command(s).
 3. Capture exit code and key failures.
 4. Return a compact test report.
 

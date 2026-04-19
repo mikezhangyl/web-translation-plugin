@@ -2,7 +2,7 @@
 name: build-error-resolver
 description: Fix build/type failures with minimal diffs and no architectural changes.
 tools: ["Read", "Grep", "Glob", "Bash"]
-model: sonnet
+model: gpt-5.3-codex
 ---
 
 # Build Error Resolver Role Template
