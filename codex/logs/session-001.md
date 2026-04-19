@@ -1025,10 +1025,25 @@ Ship the harness scaffold work: commit current harness-related and governance ch
 4. Create draft PR and capture URL.
 
 ### Actions Taken
-- Started shipping workflow.
+- Ran preflight:
+  - `git status --short --branch`
+  - `git branch --show-current`
+  - `npm run check:logs`
+- Detected preflight log check failure due to non-English CJK text in Step 32 user instruction.
+- Converted Step 32 user instruction to English-translated form and reran `npm run check:logs` (passed).
+- Committed scoped changes:
+  - `git add .`
+  - `git commit -m "feat(harness): add runnable scaffold and update release workflow"`
+- Pushed branch:
+  - `git push -u origin feat/harness-engineering-scaffold`
+- Created draft PR:
+  - `gh pr create --repo mikezhangyl/translation-plugin --draft --fill`
+  - PR URL: `https://github.com/mikezhangyl/translation-plugin/pull/2`
 
 ### Validation
-In progress.
+- Final `npm run check:logs` passed before commit.
+- Push succeeded with upstream tracking set.
+- Draft PR created successfully.
 
 ### Result
-In progress.
+Success.
