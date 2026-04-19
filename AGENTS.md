@@ -68,7 +68,11 @@ Repository-level rules for engineering execution agents.
    - `planner`: planning breakdown only
    - `code-reviewer`: quality/risk review only
    - `build-error-resolver`: build/type error fixes only, minimal diffs
-4. Model default for repository agent templates:
+4. `/test` execution policy:
+   - `/test` must run through `test-runner` sub-agent.
+   - Main thread should not execute test commands directly by default.
+   - If sub-agent execution is unavailable, return `BLOCKED` and request explicit fallback authorization.
+5. Model default for repository agent templates:
    - use `gpt-5.3-codex` unless a specific step explicitly requires another model.
    - do not use Claude-specific model labels (for example `sonnet`, `opus`) in this repository's agent templates.
 

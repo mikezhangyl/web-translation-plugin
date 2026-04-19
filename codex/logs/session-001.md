@@ -2054,3 +2054,211 @@ Proceed with the next delivery action after E2E stabilization, which is shipping
 
 ### Result
 Success.
+
+## Step 57
+
+### User Instruction
+```text
+[Translated from Chinese] Please implement the MVP translation integration plan with Azure Translator F0 as the primary provider and DeepL Free as fallback, using a background messaging architecture. Add the unified translation request/response contract, enforce fallback rules (timeout, 429, 5xx, quota), wire environment-based configuration, update UI states (loading/success/error), and keep dry-run text only as error fallback details. Add unit, integration, and Playwright coverage for success, fallback, and dual-failure flows.
+```
+
+### Understanding
+Implement the full MVP translation integration by adding a provider-agnostic translation data layer, moving network calls to background messaging, enforcing Azure -> DeepL fallback, and extending tests to cover success/fallback/failure flows.
+
+### Plan
+1. Define translation contracts and provider routing logic in reusable modules.
+2. Add background message handling for translation requests.
+3. Refactor content UI to use runtime translation results and loading/success/error states.
+4. Add unit tests for provider normalization and fallback behavior.
+5. Add integration tests for content-background message contract.
+6. Extend Playwright E2E to cover success, fallback, and dual-failure scenarios.
+7. Update README with provider configuration and testing notes.
+
+### Actions Taken
+- Added translation contracts:
+  - `lib/translation-contract.ts`
+- Added provider routing and fallback implementation:
+  - `lib/translation-service.ts`
+  - Azure primary + DeepL fallback with per-provider timeout handling.
+  - Error mapping and fallback eligibility policy.
+- Added background/service worker message handling:
+  - `background.ts`
+  - `translation:translate` listener and shared handler.
+- Updated content UI behavior:
+  - `ui/selection-translator.tsx`
+  - Replaced direct dry-run translation path with `chrome.runtime.sendMessage`.
+  - Added `loading`, `success`, and `error` rendering states.
+  - Added provider/fallback status display.
+  - Kept dry-run details only as placeholder when both providers fail.
+- Added/updated automated tests:
+  - `tests/translation-service.test.ts`
+  - `tests/background-message.test.ts`
+  - `tests/e2e/selection-flow.spec.ts`
+  - E2E now validates:
+    - Azure success
+    - Azure rate limit -> DeepL fallback success
+    - dual-provider failure -> error UI
+- Updated scripts and docs:
+  - `package.json` (`test:ui-logic` covers all unit/integration tests)
+  - `README.md` provider env setup + E2E behavior notes
+- Updated dependencies lockfile:
+  - `package-lock.json`
+
+### Validation
+- Ran `npm run test:ui-logic` (passed: 11/11 tests).
+- Ran `npm run build` (passed).
+- Ran `npm run check:local` (passed).
+- Ran `npm run test:e2e` (passed: 3/3).
+- Ran `npm run check:logs` (passed).
+
+### Result
+Success.
+
+## Step 58
+
+### User Instruction
+```text
+[Translated from Chinese] Please implement `/test`.
+```
+
+### Understanding
+User asked to implement a practical `/test` command behavior so testing can be triggered with a short command and reliably executed through sub-agents.
+
+### Plan
+1. Tighten `/test` command shim semantics.
+2. Update local-test skill to enforce sub-agent-only execution by default.
+3. Document short-form usage and blocked fallback behavior.
+4. Align repository governance wording for `/test` policy.
+
+### Actions Taken
+- Updated command shim:
+  - `commands/test.md`
+  - Added explicit execution policy:
+    - always delegate to `test-runner`
+    - main thread does not run tests directly
+    - if sub-agent is unavailable, return `BLOCKED` and request explicit fallback authorization
+  - Added default scope note (`pre-ship` when omitted).
+- Updated canonical skill:
+  - `skills/local-test-flow/SKILL.md`
+  - Switched from "default delegate" wording to mandatory sub-agent path.
+  - Added explicit blocked behavior when sub-agent is unavailable.
+- Updated skill README:
+  - `skills/local-test-flow/README.md`
+  - Added short form `/test` and clarified sub-agent-only behavior.
+- Updated governance:
+  - `AGENTS.md`
+  - Added `/test` execution policy under sub-agent defaults.
+
+### Validation
+- Ran `npm run check:logs` (passed).
+
+### Result
+Success.
+
+## Step 59
+
+### User Instruction
+```text
+[Translated from Chinese] Okay.
+```
+
+### Understanding
+User accepted the proposed next action: create a new feature branch from `main` and ship the current translation-provider MVP and `/test` policy changes as a draft PR.
+
+### Plan
+1. Create feature branch `feat/translation-provider-mvp` from current `main`.
+2. Remove transient test artifacts from the working tree.
+3. Run test verification through the `test-runner` sub-agent.
+4. Commit scoped changes and push the new branch.
+5. Open a draft PR with a concise summary and validation notes.
+
+### Actions Taken
+- Created feature branch:
+  - `feat/translation-provider-mvp`
+- Removed transient test artifact directory:
+  - `test-results/`
+- Triggered `test-runner` sub-agent to execute:
+  - `npm run test:ui-logic`
+  - `npm run test:e2e`
+  - `npm run check:local`
+
+### Validation
+- `test-runner` reported:
+  - `test:ui-logic` PASS
+  - `test:e2e` PASS
+  - `check:local` FAIL due to session log continuity issue while Step 59 was misplaced in the session file.
+
+### Result
+Partial: branch creation and test delegation succeeded; shipping paused to repair session log continuity before rerunning tests.
+
+## Step 60
+
+### User Instruction
+```text
+[Translated from Chinese] Retry now.
+```
+
+### Understanding
+After repairing the session log continuity issue, rerun sub-agent verification and continue the shipping flow for the current branch.
+
+### Plan
+1. Re-run `test-runner` sub-agent verification.
+2. Remove regenerated transient test artifacts.
+3. Commit the current branch changes.
+4. Push `feat/translation-provider-mvp` to origin.
+5. Create a draft PR.
+
+### Actions Taken
+- Re-ran `test-runner` sub-agent for:
+  - `npm run test:ui-logic`
+  - `npm run test:e2e`
+  - `npm run check:local`
+- Removed regenerated transient artifact directory:
+  - `test-results/`
+- Committed current branch changes:
+  - `feat(translation): add provider fallback MVP and sub-agent test policy`
+- Pushed branch:
+  - `feat/translation-provider-mvp`
+- Created draft PR:
+  - `#6`
+- Corrected PR body text to avoid shell interpretation of `/test`.
+
+### Validation
+- `test-runner` reported:
+  - `test:ui-logic` PASS
+  - `test:e2e` PASS
+  - `check:local` PASS
+- Verified PR state:
+  - open draft PR `#6`
+  - URL: `https://github.com/mikezhangyl/translation-plugin/pull/6`
+
+### Result
+Success.
+
+## Step 61
+
+### User Instruction
+```text
+[Translated from Chinese] Continue.
+```
+
+### Understanding
+User asked to continue by syncing the final pending session-log change to the already-open draft PR for the current feature branch.
+
+### Plan
+1. Confirm current branch and PR target.
+2. Commit the remaining session-log change.
+3. Push the branch so PR `#6` is updated.
+
+### Actions Taken
+- Confirmed active branch:
+  - `feat/translation-provider-mvp`
+- Confirmed open draft PR:
+  - `#6`
+- Prepared final log-sync commit for the current branch.
+
+### Validation
+- Pending push.
+
+### Result
+In progress.

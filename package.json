@@ -8,7 +8,7 @@
     "dev": "plasmo dev",
     "build": "plasmo build",
     "package": "plasmo package",
-    "test:ui-logic": "tsx --test tests/selection-ui.test.ts",
+    "test:ui-logic": "tsx --test tests/*.test.ts",
     "test:e2e": "npm run build && playwright test",
     "check:logs": "node scripts/validate-logs.mjs",
     "check:local": "npm run test:ui-logic && npm run harness:test && npm run check:logs",

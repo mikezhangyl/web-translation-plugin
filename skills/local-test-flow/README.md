@@ -4,9 +4,15 @@ Use one short command:
 
 `/test <scope>`
 
+Short form:
+
+`/test` (defaults to `pre-ship`)
+
 Default execution path:
 
 - Delegate to `agents/test-runner.md` and return summary to main thread.
+- Main thread should not run test commands directly.
+- If sub-agent is unavailable, return `BLOCKED` and request explicit fallback approval.
 
 Supported scopes:
 

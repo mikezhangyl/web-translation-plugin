@@ -7,6 +7,7 @@ description: Standardize local verification before `/ship` and during implementa
 
 Use this skill whenever local verification is needed.
 Default behavior is to keep main-thread context short by delegating test execution to the `test-runner` sub-agent.
+This skill is sub-agent-first and sub-agent-only unless the user explicitly authorizes a fallback.
 
 ## Trigger Phrase
 
@@ -27,17 +28,18 @@ If no scope is provided, default to `pre-ship`.
 - `harness` -> `npm run harness:test`
 - `pre-ship` -> `npm run check:local`
 
-## Sub-Agent Rule (Default)
+## Sub-Agent Rule (Mandatory)
 
-Default path:
+Required path:
 
 1. Delegate test execution to `agents/test-runner.md`.
 2. Keep main-thread output short and structured.
 3. Return only high-signal results to the main thread.
 
-Fallback path:
+If sub-agent execution is unavailable:
 
-- If sub-agent execution is unavailable in the runtime, execute commands directly and keep the same output contract.
+- Return `BLOCKED: sub-agent unavailable`.
+- Ask for explicit user authorization before any main-thread fallback.
 
 ## Workflow
 

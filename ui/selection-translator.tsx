@@ -7,6 +7,7 @@ import {
   isLikelyWord,
   type MarkerPosition
 } from "../lib/selection-ui"
+import type { TranslateRequest, TranslationMessageResponse } from "../lib/translation-contract"
 
 const Z_INDEX = 2147483646
 const HIDE_DELAY_MS = 120
@@ -72,11 +73,64 @@ const iconButtonStyle = {
   lineHeight: 1
 } as const
 
+type TranslationState =
+  | {
+      status: "loading"
+    }
+  | {
+      status: "success"
+      translatedText: string
+      detectedSourceLang?: string
+      provider: "azure" | "deepl"
+      fallbackUsed: boolean
+    }
+  | {
+      status: "error"
+      errorCode: string
+      provider: "azure" | "deepl"
+      message: string
+    }
+
+const requestTranslation = async (request: TranslateRequest): Promise<TranslationMessageResponse> => {
+  if (typeof chrome === "undefined" || !chrome.runtime?.sendMessage) {
+    return {
+      ok: false,
+      error: {
+        code: "UNKNOWN",
+        provider: "azure",
+        message: "Runtime messaging is unavailable"
+      }
+    }
+  }
+
+  return chrome.runtime.sendMessage({
+    type: "translation:translate",
+    payload: request
+  })
+}
+
+const getE2EMode = (): TranslateRequest["e2eMode"] => {
+  if (window.location.hostname !== "example.com") {
+    return undefined
+  }
+  const value = document.documentElement.getAttribute("data-translation-e2e-mode") ?? ""
+  if (
+    value === "azure_success" ||
+    value === "azure_rate_limit_then_deepl_success" ||
+    value === "dual_fail"
+  ) {
+    return value
+  }
+  return undefined
+}
+
 const MainWorldSelectionTranslator = () => {
   const [selectedText, setSelectedText] = useState("")
   const [position, setPosition] = useState<MarkerPosition | null>(null)
   const [showCard, setShowCard] = useState(false)
+  const [translationState, setTranslationState] = useState<TranslationState | null>(null)
   const hideTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const requestIdRef = useRef(0)
 
   useEffect(() => {
     const updateFromSelection = () => {
@@ -86,6 +140,7 @@ const MainWorldSelectionTranslator = () => {
         setSelectedText("")
         setPosition(null)
         setShowCard(false)
+        setTranslationState(null)
         return
       }
 
@@ -94,18 +149,21 @@ const MainWorldSelectionTranslator = () => {
         setSelectedText("")
         setPosition(null)
         setShowCard(false)
+        setTranslationState(null)
         return
       }
 
       setSelectedText(text)
       setPosition(nextPos)
       setShowCard(false)
+      setTranslationState(null)
     }
 
     const hideAll = () => {
       setSelectedText("")
       setPosition(null)
       setShowCard(false)
+      setTranslationState(null)
     }
 
     const onMouseUp = () => updateFromSelection()
@@ -139,6 +197,54 @@ const MainWorldSelectionTranslator = () => {
     }
   }, [showCard])
 
+  useEffect(() => {
+    if (!showCard || !selectedText || translationState) {
+      return
+    }
+
+    requestIdRef.current += 1
+    const requestId = requestIdRef.current
+    setTranslationState({ status: "loading" })
+
+    requestTranslation({
+      text: selectedText,
+      targetLang: "zh-CN",
+      e2eMode: getE2EMode()
+    })
+      .then((result) => {
+        if (requestId !== requestIdRef.current) {
+          return
+        }
+        if (result.ok) {
+          setTranslationState({
+            status: "success",
+            translatedText: result.data.translatedText,
+            detectedSourceLang: result.data.detectedSourceLang,
+            provider: result.data.provider,
+            fallbackUsed: result.data.fallbackUsed
+          })
+          return
+        }
+        setTranslationState({
+          status: "error",
+          errorCode: result.error.code,
+          provider: result.error.provider,
+          message: result.error.message
+        })
+      })
+      .catch((error) => {
+        if (requestId !== requestIdRef.current) {
+          return
+        }
+        setTranslationState({
+          status: "error",
+          errorCode: "UNKNOWN",
+          provider: "azure",
+          message: error instanceof Error ? error.message : "Unexpected translation failure"
+        })
+      })
+  }, [showCard, selectedText, translationState])
+
   const scheduleHide = () => {
     if (hideTimer.current) {
       clearTimeout(hideTimer.current)
@@ -160,6 +266,7 @@ const MainWorldSelectionTranslator = () => {
   }
 
   const data = buildDryRunTranslation(selectedText)
+  const shouldShowPlaceholderDetails = translationState?.status === "error"
 
   return (
     <>
@@ -220,29 +327,57 @@ const MainWorldSelectionTranslator = () => {
               <strong style={{ fontSize: 50, fontWeight: 700, lineHeight: 1.12 }}>{data.source}</strong>
               <span style={{ color: "#8e9095", fontSize: 46, lineHeight: 1.12 }}>{data.phonetic}</span>
             </div>
-            <p style={{ color: "#44474d", fontSize: 22, margin: "0 0 14px" }}>
-              <span style={{ color: "#757983", marginRight: 10 }}>{data.partOfSpeech}</span>
-              {data.shortMeaning}
-            </p>
-            <p style={{ color: "#3f4248", fontSize: 22, lineHeight: 1.5, margin: 0 }}>
-              I use{" "}
-              <span style={{ color: "#ef4f96", fontWeight: 600 }}>{data.source}</span> to organize my notes.
-            </p>
+            {translationState?.status === "loading" ? (
+              <p data-testid="translation-loading" style={{ color: "#44474d", fontSize: 22, margin: "0 0 14px" }}>
+                Translating...
+              </p>
+            ) : null}
+            {translationState?.status === "success" ? (
+              <>
+                <p
+                  data-testid="translation-success-text"
+                  style={{ color: "#44474d", fontSize: 22, margin: "0 0 14px" }}>
+                  {translationState.translatedText}
+                </p>
+                <p
+                  data-testid="translation-provider"
+                  style={{ color: "#6b6f78", fontSize: 16, margin: 0 }}>
+                  Provider: {translationState.provider}
+                  {translationState.fallbackUsed ? " (fallback)" : ""}
+                </p>
+              </>
+            ) : null}
+            {translationState?.status === "error" ? (
+              <>
+                <p data-testid="translation-error" style={{ color: "#b53a3a", fontSize: 20, margin: "0 0 10px" }}>
+                  Translation unavailable ({translationState.provider}:{translationState.errorCode})
+                </p>
+                <p style={{ color: "#6b6f78", fontSize: 16, margin: 0 }}>
+                  {translationState.message}
+                </p>
+              </>
+            ) : null}
           </div>
 
-          <div
-            style={{
-              background: "#ececee",
-              borderRadius: 18,
-              padding: "18px 22px"
-            }}>
-            <div style={{ alignItems: "center", display: "flex", gap: 12, marginBottom: 8 }}>
-              <strong style={{ fontSize: 48, fontWeight: 700, lineHeight: 1.2 }}>{data.detailTitle}</strong>
-              <button style={iconButtonStyle}>🔊</button>
-              <button style={iconButtonStyle}>⧉</button>
+          {shouldShowPlaceholderDetails ? (
+            <div
+              data-testid="translation-placeholder"
+              style={{
+                background: "#ececee",
+                borderRadius: 18,
+                padding: "18px 22px"
+              }}>
+              <div style={{ alignItems: "center", display: "flex", gap: 12, marginBottom: 8 }}>
+                <strong style={{ fontSize: 48, fontWeight: 700, lineHeight: 1.2 }}>{data.detailTitle}</strong>
+                <button style={iconButtonStyle}>🔊</button>
+                <button style={iconButtonStyle}>⧉</button>
+              </div>
+              <p style={{ color: "#353940", fontSize: 22, lineHeight: 1.5, margin: "0 0 8px" }}>
+                Placeholder detail (dry-run)
+              </p>
+              <p style={{ color: "#353940", fontSize: 22, lineHeight: 1.5, margin: 0 }}>{data.detailBody}</p>
             </div>
-            <p style={{ color: "#353940", fontSize: 22, lineHeight: 1.5, margin: 0 }}>{data.detailBody}</p>
-          </div>
+          ) : null}
         </section>
       ) : null}
     </>
