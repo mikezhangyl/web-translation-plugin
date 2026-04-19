@@ -817,3 +817,218 @@ Finalize and push the remaining local log updates to the active PR branch.
 
 ### Result
 Success.
+
+## Step 27
+
+### User Instruction
+```text
+[Translated from Chinese] Okay, let's start building /land, but as slash commands grow, I cannot remember them.
+```
+
+### Understanding
+Extend the workflow skill with a `/land` command and add a low-memory usage model so users can operate with minimal command recall.
+
+### Plan
+1. Add `/land` trigger and merge workflow to the skill.
+2. Add practical memory-friendly command conventions.
+3. Update skill samples and metadata.
+4. Validate skill and log compliance.
+
+### Actions Taken
+- Updated `skills/github-release-flow/SKILL.md`:
+  - Added `/land` and `/land --keep-branch` triggers.
+  - Added landing workflow (merge approved PR, cleanup, sync local `main`).
+  - Added low-memory usage model: users only need `/ship` and `/land`.
+  - Added natural-language fallback mapping for submit/merge intents.
+- Updated `skills/github-release-flow/README.md`:
+  - Added two-command memory model and `/land` samples.
+  - Added behavior notes for merge and local sync.
+- Updated `skills/github-release-flow/agents/openai.yaml`:
+  - Updated short description and default prompt to include both `/ship` and `/land`.
+
+### Validation
+- Ran:
+  - `python3 .../quick_validate.py skills/github-release-flow`
+  - Result: `Skill is valid!`
+- Ran:
+  - `npm run check:logs`
+  - Result: `Logging compliance check passed.`
+
+### Result
+Success.
+
+## Step 28
+
+### User Instruction
+```text
+/land
+```
+
+### Understanding
+Run landing workflow to merge approved PR and complete post-merge cleanup/sync. If PR is already merged, perform cleanup/sync only.
+
+### Plan
+1. Check target PR state.
+2. Merge PR if still open and ready.
+3. Sync local `main`.
+4. Clean up completed feature branch.
+
+### Actions Taken
+- Queried PR #1 state.
+- Detected PR #1 is already merged.
+- Executed cleanup/sync path:
+  - Deleted remote merged branch:
+    - `git push origin --delete chore/workflow-ship-draft-pr`
+  - Fetched latest default branch:
+    - `git fetch origin main`
+  - Attempted to switch to local `main` for sync:
+    - `git switch main`
+    - blocked by local uncommitted changes.
+
+### Validation
+- PR state: merged (`MERGED`).
+- Remote feature branch deletion succeeded.
+- Local main sync is blocked until current working changes are committed or stashed.
+
+### Result
+Partial success: merge was already completed; remote branch cleanup is done; local switch/sync is safely blocked by uncommitted changes.
+
+## Step 29
+
+### User Instruction
+```text
+[Translated from Chinese] Future session-file changes generated in this process should follow the next new branch. Next I want to continue building the harness engineering scaffold.
+```
+
+### Understanding
+Adopt branch-scoped session logging policy and start implementing a harness engineering scaffold on a newly created branch.
+
+### Plan
+1. Persist branch-scoped session logging policy in repository governance.
+2. Create/switch to a new branch for harness scaffold work.
+3. Add minimal harness engineering scaffold files (structure only, no business logic).
+4. Validate log compliance and basic repository consistency.
+
+### Actions Taken
+- Switched work to a new branch for this objective:
+  - `feat/harness-engineering-scaffold`
+- Added branch-scoped session policy to `AGENTS.md`.
+- Added harness engineering scaffold files:
+  - `harness/README.md`
+  - `harness/config/harness.config.example.json`
+  - `harness/contracts/README.md`
+  - `harness/fixtures/README.md`
+  - `harness/scenarios/README.md`
+  - `harness/tests/README.md`
+  - `docs/harness-engineering.md`
+- Updated root `README.md` with harness scaffold location notes.
+- Preserved and carried active session-file changes on the new branch as requested.
+
+### Validation
+- Ran skill validator:
+  - `python3 .../quick_validate.py skills/github-release-flow`
+  - Result: `Skill is valid!`
+- Ran log compliance:
+  - `npm run check:logs`
+  - Result: `Logging compliance check passed.`
+- Verified active branch:
+  - `feat/harness-engineering-scaffold`
+
+### Result
+Success.
+
+## Step 30
+
+### User Instruction
+```text
+[Translated from Chinese] Teach me step by step. Do not build the project itself first. Build the mandatory harness scaffold first.
+```
+
+### Understanding
+Implement a runnable minimal harness skeleton first (without business logic) and structure it so the user can learn incrementally.
+
+### Plan
+1. Add minimal harness contract/schema files.
+2. Add one dry-run scenario and deterministic fixtures.
+3. Add a lightweight harness runner and smoke test.
+4. Add npm scripts and concise usage docs.
+5. Validate with local commands.
+
+### Actions Taken
+- Added minimal runnable harness components:
+  - `harness/contracts/scenario.schema.json`
+  - `harness/scenarios/dry-run.translation.json`
+  - `harness/fixtures/input.sample.json`
+  - `harness/fixtures/output.sample.json`
+  - `harness/scripts/run-harness.mjs`
+  - `harness/tests/smoke.mjs`
+  - `harness/reports/.gitkeep`
+- Updated `package.json` with:
+  - `harness:run`
+  - `harness:test`
+- Updated harness documentation:
+  - `harness/README.md`
+  - `docs/harness-engineering.md`
+
+### Validation
+- Ran `npm run harness:run` (passed).
+- Ran `npm run harness:test` (passed).
+- Ran `npm run check:logs`:
+  - first run failed due to `current-session` next-step mismatch.
+  - fixed `codex/current-session.md` step pointer and re-ran.
+  - final run passed.
+
+### Result
+Success.
+
+## Step 31
+
+### User Instruction
+```text
+[Translated from Chinese] The description in AGENTS.md is still not clear. Commands/questions that do not cause file changes should not be recorded in session logs.
+```
+
+### Understanding
+Clarify logging policy with an explicit file-change criterion and non-logging cases for non-mutating interactions.
+
+### Plan
+1. Update AGENTS logging rule to use file mutation as the recording threshold.
+2. Refine non-logging examples so command/Q&A requests without file changes are clearly excluded.
+3. Validate log compliance.
+
+### Actions Taken
+- Updated `AGENTS.md`:
+  - Rule 1 now states only file-changing instructions must be logged.
+  - Added explicit distinction for explanation/Q&A/usage guidance with no repository mutation.
+  - Refined non-logging case wording for command questions with no file changes.
+
+### Validation
+- Ran `npm run check:logs`.
+
+### Result
+Success.
+
+## Step 32
+
+### User Instruction
+```text
+/ship [Translated from Chinese] decide to build harness scaffold
+```
+
+### Understanding
+Ship the harness scaffold work: commit current harness-related and governance changes on the active branch, push to remote, and create a draft PR by default.
+
+### Plan
+1. Run preflight checks (`git status`, branch, `npm run check:logs`).
+2. Commit scoped changes for harness scaffold and workflow/governance updates.
+3. Push branch to origin.
+4. Create draft PR and capture URL.
+
+### Actions Taken
+- Started shipping workflow.
+
+### Validation
+In progress.
+
+### Result
+In progress.

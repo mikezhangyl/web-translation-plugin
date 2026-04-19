@@ -1,0 +1,39 @@
+{
+  "harness": "translation-plugin-harness",
+  "scenarioId": "dry-run.translation.baseline",
+  "mode": "dry-run",
+  "startedAt": "2026-04-19T04:42:27.080Z",
+  "completedAt": "2026-04-19T04:42:27.080Z",
+  "status": "passed",
+  "checks": [
+    {
+      "name": "scenario-shape",
+      "status": "passed"
+    },
+    {
+      "name": "fixture-input-exists",
+      "status": "passed"
+    },
+    {
+      "name": "fixture-expected-output-exists",
+      "status": "passed"
+    }
+  ],
+  "artifacts": {
+    "inputPath": "harness/fixtures/input.sample.json",
+    "expectedOutputPath": "harness/fixtures/output.sample.json"
+  },
+  "sample": {
+    "inputPreviewKeys": [
+      "requestId",
+      "sourceLanguage",
+      "targetLanguage",
+      "text"
+    ],
+    "expectedPreviewKeys": [
+      "requestId",
+      "translatedText",
+      "status"
+    ]
+  }
+}

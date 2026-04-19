@@ -1,6 +1,6 @@
 ---
 name: github-release-flow
-description: Standardize branch-based GitHub delivery for this repository. Use when preparing to commit, push, or open a PR, and whenever the user invokes `/ship` with a one-line task intent. Default behavior is commit + push + create draft PR, with optional `/ship --no-pr` exception. Enforce branch naming, preflight checks, commit scope control, and auditable release handoff.
+description: Standardize branch-based GitHub delivery for this repository. Use when preparing to commit/push with `/ship` and when merging an approved PR with `/land`. Default `/ship` behavior is commit + push + create draft PR, with optional `/ship --no-pr` exception. `/land` merges the active PR and performs branch cleanup/sync. Enforce branch naming, preflight checks, commit scope control, and auditable release handoff.
 ---
 
 # Github Release Flow
@@ -10,7 +10,7 @@ Keep changes focused, avoid direct work on `main`, and produce a concise handoff
 
 ## Trigger Phrase
 
-Primary trigger:
+Primary delivery trigger:
 
 `/ship <one-line-task-intent>`
 
@@ -18,12 +18,33 @@ Exception trigger:
 
 `/ship --no-pr <one-line-task-intent>`
 
+Landing trigger:
+
+`/land`
+
+Landing exception:
+
+`/land --keep-branch`
+
 Examples:
 - `/ship add logging compliance workflow and create draft pr`
 - `/ship fix popup crash and prepare PR handoff`
 - `/ship --no-pr backup current branch changes only`
+- `/land`
+- `/land --keep-branch`
 
 If only `/ship` is provided without intent, ask for one sentence before continuing.
+
+## Low-Memory Usage Model
+
+Users only need to remember two commands:
+- `/ship <intent>`: deliver changes and open/update PR flow
+- `/land`: merge approved PR and clean up
+
+If user sends natural language such as "submit this change" or "merge this PR":
+- Map "submit" intent to `/ship`.
+- Map "merge" intent to `/land`.
+- Confirm detected intent in one line, then continue.
 
 ## Workflow
 
@@ -35,6 +56,28 @@ If only `/ship` is provided without intent, ask for one sentence before continui
 6. Push the current branch.
 7. Create draft PR by default.
 8. Prepare PR handoff summary.
+
+## Landing Workflow (`/land`)
+
+1. Resolve target PR:
+   - Prefer PR associated with current branch.
+   - If missing, stop and ask user for PR number.
+2. Validate merge readiness:
+   - PR state must be open.
+   - PR must not be draft.
+   - Approval and checks should be satisfied per repo policy.
+3. Merge PR:
+   - Default merge method: squash.
+   - Command:
+     - `gh pr merge <number> --squash --delete-branch`
+4. Post-merge sync:
+   - `git fetch origin main`
+   - `git switch main`
+   - `git pull origin main`
+5. Output:
+   - merged PR URL/number
+   - merge method used
+   - cleanup result
 
 ## 1) Clarify Task Intent
 

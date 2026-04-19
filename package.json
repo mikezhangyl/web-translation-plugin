@@ -8,7 +8,9 @@
     "dev": "plasmo dev",
     "build": "plasmo build",
     "package": "plasmo package",
-    "check:logs": "node scripts/validate-logs.mjs"
+    "check:logs": "node scripts/validate-logs.mjs",
+    "harness:run": "node harness/scripts/run-harness.mjs --config harness/config/harness.config.example.json --scenario harness/scenarios/dry-run.translation.json",
+    "harness:test": "node harness/tests/smoke.mjs"
   },
   "dependencies": {
     "plasmo": "0.90.5",

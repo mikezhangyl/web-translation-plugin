@@ -4,21 +4,27 @@ Repository-level rules for engineering execution agents.
 
 ## 1) Non-Negotiable Logging Rules
 
-1. Every execution-affecting user instruction MUST be recorded.
+1. Only file-changing instructions MUST be recorded in session logs.
+   - Record when the request edits files, creates/deletes files, or otherwise changes repository state.
+   - Do not record when the request is only explanation, clarification, Q&A, or usage guidance with no repository mutation.
 2. Logging is mandatory before or during execution.
 3. No step can skip logging.
 4. Persisted log content in this repository MUST be in English.
 5. If the user instruction is not in English, record a faithful English translation and mark it as translated.
 6. Small-step execution only. Large, uncontrolled changes are not allowed.
-7. Exempt from session logging:
+7. Explicit non-logging cases:
    - Pure explanation questions (for example, "what does this mean?")
    - Tool or skill usage guidance with no repository mutation
-   - General Q&A that does not run commands, edit files, or change project state
+   - General Q&A and command questions that do not change files
 8. Session rollover rule:
    - When a session file exceeds 100 steps, create the next file using zero-padded sequence naming:
      - `session-001.md` -> `session-002.md` -> `session-003.md`
    - Start each new session file at `Step 1`.
    - Update `codex/current-session.md` to point to the new active session file.
+9. Branch-scoped session changes:
+   - Session file changes created during active work stay on the active feature branch.
+   - Do not force-move session changes to unrelated branches.
+   - Session files are merged through the same PR as the work they describe.
 
 ## 2) Behavioral Rules (Execution Quality)
 
