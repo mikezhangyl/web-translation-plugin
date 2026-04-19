@@ -1,9 +1,9 @@
 {
   "harness": "translation-plugin-harness",
-  "scenarioId": "dry-run.translation.baseline",
+  "scenarioId": "dry-run.translation.variant",
   "mode": "dry-run",
-  "startedAt": "2026-04-19T04:42:27.080Z",
-  "completedAt": "2026-04-19T04:42:27.080Z",
+  "startedAt": "2026-04-19T05:41:42.709Z",
+  "completedAt": "2026-04-19T05:41:42.710Z",
   "status": "passed",
   "checks": [
     {
@@ -20,8 +20,30 @@
     }
   ],
   "artifacts": {
-    "inputPath": "harness/fixtures/input.sample.json",
-    "expectedOutputPath": "harness/fixtures/output.sample.json"
+    "inputPath": "harness/fixtures/input.variant.json",
+    "expectedOutputPath": "harness/fixtures/output.variant.json"
+  },
+  "comparison": {
+    "match": true,
+    "diffKeys": [],
+    "actual": {
+      "requestId": "variant-001",
+      "translatedText": "Harness variant",
+      "status": "actual",
+      "metadata": {
+        "generator": "harness-dry-run",
+        "confidence": 1
+      }
+    },
+    "expected": {
+      "requestId": "variant-001",
+      "translatedText": "Harness variant",
+      "status": "actual",
+      "metadata": {
+        "generator": "harness-dry-run",
+        "confidence": 1
+      }
+    }
   },
   "sample": {
     "inputPreviewKeys": [
@@ -33,7 +55,8 @@
     "expectedPreviewKeys": [
       "requestId",
       "translatedText",
-      "status"
+      "status",
+      "metadata"
     ]
   }
 }

@@ -30,6 +30,15 @@ cat harness/reports/latest.json
 
 Step 4. Add your next scenario under `harness/scenarios/` using the same structure.
 
+Current built-in scenarios:
+
+- `dry-run.translation.baseline` (intentionally mismatch sample, demonstrates diff output)
+- `dry-run.translation.variant` (intentionally matched sample)
+
+Diff output uses nested paths, for example:
+
+- `metadata.generator`
+
 ## Structure
 
 - `config/` for harness configuration templates.

@@ -14,6 +14,11 @@ Runnable minimal harness scaffold:
 - Harness runner script available (`harness/scripts/run-harness.mjs`).
 - Smoke test available (`harness/tests/smoke.mjs`).
 - Report output path available (`harness/reports/latest.json`).
+- Comparison payload available in reports:
+  - `comparison.match`
+  - `comparison.diffKeys` (nested path format, for example `metadata.generator`)
+  - `comparison.actual`
+  - `comparison.expected`
 
 ## Next Suggested Build Order
 

@@ -1,0 +1,9 @@
+{
+  "requestId": "variant-001",
+  "translatedText": "Harness variant",
+  "status": "actual",
+  "metadata": {
+    "generator": "harness-dry-run",
+    "confidence": 1
+  }
+}

@@ -42,6 +42,44 @@ const ensureScenarioShape = (scenario) => {
   )
 }
 
+const isObject = (value) => value !== null && typeof value === "object"
+
+const diffPaths = (actual, expected, currentPath = "") => {
+  if (!isObject(actual) || !isObject(expected)) {
+    return JSON.stringify(actual) === JSON.stringify(expected) ? [] : [currentPath || "$"]
+  }
+
+  const keys = new Set([...Object.keys(actual), ...Object.keys(expected)])
+  const paths = []
+
+  for (const key of keys) {
+    const nextPath = currentPath ? `${currentPath}.${key}` : key
+    const aValue = actual[key]
+    const eValue = expected[key]
+
+    if (isObject(aValue) && isObject(eValue)) {
+      paths.push(...diffPaths(aValue, eValue, nextPath))
+      continue
+    }
+
+    if (JSON.stringify(aValue) !== JSON.stringify(eValue)) {
+      paths.push(nextPath)
+    }
+  }
+
+  return paths
+}
+
+const buildActualFromInput = (input) => ({
+  requestId: input.requestId,
+  translatedText: input.text,
+  status: "actual",
+  metadata: {
+    generator: "harness-dry-run",
+    confidence: 1
+  }
+})
+
 const main = () => {
   const args = parseArgs()
   const configPath = path.resolve(cwd, args.config ?? "harness/config/harness.config.example.json")
@@ -63,6 +101,9 @@ const main = () => {
   const startedAt = new Date().toISOString()
   const input = readJson(inputPath)
   const expected = readJson(expectedOutputPath)
+  const actual = buildActualFromInput(input)
+  const changedPaths = diffPaths(actual, expected)
+  const match = changedPaths.length === 0
 
   const report = {
     harness: config.name ?? "unnamed-harness",
@@ -79,6 +120,12 @@ const main = () => {
     artifacts: {
       inputPath: scenario.fixture.inputPath,
       expectedOutputPath: scenario.fixture.expectedOutputPath
+    },
+    comparison: {
+      match,
+      diffKeys: changedPaths,
+      actual,
+      expected
     },
     sample: {
       inputPreviewKeys: Object.keys(input),

@@ -1047,3 +1047,115 @@ Ship the harness scaffold work: commit current harness-related and governance ch
 
 ### Result
 Success.
+
+## Step 33
+
+### User Instruction
+```text
+[Translated from Chinese] Okay, continue.
+```
+
+### Understanding
+Continue harness foundation work by adding a second scenario and comparison output (`actual` vs `expected`) while keeping scope at scaffold level.
+
+### Plan
+1. Add a second dry-run scenario and corresponding fixtures.
+2. Extend harness runner to emit comparison fields (`match`, `diffKeys`, `actual`, `expected`).
+3. Extend smoke test to validate both scenarios and comparison payload.
+4. Run harness and log compliance checks.
+
+### Actions Taken
+- Added second scenario and fixtures:
+  - `harness/scenarios/dry-run.translation.variant.json`
+  - `harness/fixtures/input.variant.json`
+  - `harness/fixtures/output.variant.json`
+- Extended harness runner (`harness/scripts/run-harness.mjs`) with comparison output:
+  - `comparison.match`
+  - `comparison.diffKeys`
+  - `comparison.actual`
+  - `comparison.expected`
+- Extended smoke test (`harness/tests/smoke.mjs`) to run and validate both baseline and variant scenarios.
+- Updated docs:
+  - `harness/README.md`
+  - `docs/harness-engineering.md`
+
+### Validation
+- Ran:
+  - `npm run harness:run` (baseline scenario passed)
+  - `node harness/scripts/run-harness.mjs --config harness/config/harness.config.example.json --scenario harness/scenarios/dry-run.translation.variant.json` (variant scenario passed)
+  - `npm run harness:test` (passed for baseline + variant)
+- Verified report output includes comparison payload in `harness/reports/latest.json`.
+- Ran `npm run check:logs`:
+  - first run failed due to next-step mismatch.
+  - fixed `codex/current-session.md` pointer.
+  - final run passed.
+
+### Result
+Success.
+
+## Step 34
+
+### User Instruction
+```text
+[Translated from Chinese] Okay, continue.
+```
+
+### Understanding
+Continue harness improvement by upgrading comparison from shallow key checks to nested deep-diff paths with deterministic validation.
+
+### Plan
+1. Implement deep diff path generation in harness runner.
+2. Add nested fixture fields to exercise deep-diff behavior.
+3. Update smoke test assertions for nested diff output.
+4. Run harness and log compliance checks.
+
+### Actions Taken
+- Updated `harness/scripts/run-harness.mjs`:
+  - Replaced shallow comparison with recursive nested path diff.
+  - Added nested output in actual payload (`metadata.generator`, `metadata.confidence`).
+  - `comparison.diffKeys` now returns nested paths (for example `metadata.generator`).
+- Updated fixtures to exercise deep diff behavior:
+  - `harness/fixtures/output.sample.json` now includes nested metadata with intentional mismatch.
+  - `harness/fixtures/output.variant.json` now includes nested metadata matching actual output.
+- Updated smoke test `harness/tests/smoke.mjs`:
+  - Added expected diff path assertions for baseline scenario.
+  - Kept full-match assertion for variant scenario.
+- Updated docs:
+  - `harness/README.md`
+  - `docs/harness-engineering.md`
+
+### Validation
+- Ran:
+  - `npm run harness:run` (baseline passed)
+  - `node harness/scripts/run-harness.mjs --config harness/config/harness.config.example.json --scenario harness/scenarios/dry-run.translation.variant.json` (variant passed)
+  - `npm run harness:test` (passed for both scenarios)
+  - `node harness/scripts/run-harness.mjs --config harness/config/harness.config.example.json --scenario harness/scenarios/dry-run.translation.json && node -e "const r=require('./harness/reports/latest.json'); console.log(JSON.stringify(r.comparison.diffKeys));"` (verified nested diff paths: `["translatedText","status","metadata.generator"]`)
+  - `npm run check:logs` (passed)
+
+### Result
+Success.
+
+## Step 35
+
+### User Instruction
+```text
+/ship [Translated from Chinese] update Draft PR #2 with this deep-diff batch of changes
+```
+
+### Understanding
+Ship current deep-diff harness updates to the existing draft PR #2 by committing and pushing on the same branch.
+
+### Plan
+1. Run preflight checks.
+2. Commit scoped deep-diff changes.
+3. Push branch to update existing draft PR #2.
+4. Verify PR #2 remains draft and points to updated head.
+
+### Actions Taken
+- Started shipping workflow.
+
+### Validation
+In progress.
+
+### Result
+In progress.
