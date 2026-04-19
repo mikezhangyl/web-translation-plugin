@@ -1577,3 +1577,87 @@ Proceed by shipping the pending schema-versioning and edge-case harness updates 
 
 ### Result
 Success.
+
+## Step 46
+
+### User Instruction
+```text
+[Translated from Chinese] Before we start, I want to set up the necessary skills and sub-agent workflow, for example local tests should be executed by a sub-agent with a corresponding testing skill.
+```
+
+### Understanding
+Set up repository-level reusable skill infrastructure so local testing can be standardized and delegated, while keeping main-thread context compact.
+
+### Plan
+1. Add a dedicated local testing skill with `/test` trigger and scope mapping.
+2. Add a single local verification command in `package.json`.
+3. Integrate the new command into `/ship` preflight in GitHub release skill.
+4. Validate local checks and logging compliance.
+
+### Actions Taken
+- Updated `package.json`:
+  - Added `check:local` script:
+    - `npm run harness:test && npm run check:logs`
+- Added new testing skill:
+  - `skills/local-test-flow/SKILL.md`
+  - `skills/local-test-flow/README.md`
+  - `skills/local-test-flow/agents/openai.yaml`
+  - Defined `/test <scope>` with mappings:
+    - `quick` -> `npm run check:logs`
+    - `harness` -> `npm run harness:test`
+    - `pre-ship` -> `npm run check:local`
+  - Included sub-agent-first execution rule and compact output contract.
+- Updated GitHub release skill to use the new unified preflight command:
+  - `skills/github-release-flow/SKILL.md`
+  - `skills/github-release-flow/README.md`
+  - Preflight now runs `npm run check:local`.
+
+### Validation
+- Ran `npm run check:local` (passed).
+- Ran `npm run check:logs` (passed).
+
+### Result
+Success.
+
+## Step 47
+
+### User Instruction
+```text
+/ship
+```
+
+### Understanding
+Ship the newly added local-test skill and preflight integration updates by committing and pushing the current branch, then creating a draft PR.
+
+### Plan
+1. Run preflight checks (`check:local`, `check:logs`, branch/status).
+2. Check whether a PR already exists for current branch.
+3. Commit all scoped changes.
+4. Push branch to origin.
+5. Create draft PR if none exists and return PR URL.
+
+### Actions Taken
+- Ran preflight:
+  - `git branch --show-current`
+  - `git status --short --branch`
+  - `npm run check:local`
+  - `npm run check:logs`
+- Checked existing PR:
+  - `gh pr list --head feat/translation-plugin-mvp ...`
+  - Confirmed no existing PR for this branch.
+- Committed scoped changes:
+  - `git add .`
+  - `git commit -m "chore(skill): add local test flow and preflight gate"`
+- Pushed branch:
+  - `git push -u origin feat/translation-plugin-mvp`
+- Created draft PR:
+  - `gh pr create --repo mikezhangyl/translation-plugin --base main --head feat/translation-plugin-mvp --draft --title "chore(skill): add local test flow and preflight gate" --body "..."`
+
+### Validation
+- `npm run check:local` passed before commit.
+- `npm run check:logs` passed before commit.
+- Push succeeded.
+- Draft PR created successfully.
+
+### Result
+Success.

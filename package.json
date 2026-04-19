@@ -9,6 +9,7 @@
     "build": "plasmo build",
     "package": "plasmo package",
     "check:logs": "node scripts/validate-logs.mjs",
+    "check:local": "npm run harness:test && npm run check:logs",
     "harness:run": "node harness/scripts/run-harness.mjs --config harness/config/harness.config.example.json --scenario harness/scenarios/dry-run.translation.json",
     "harness:test:positive": "node harness/tests/smoke.positive.mjs",
     "harness:test:negative": "node harness/tests/smoke.negative.mjs",

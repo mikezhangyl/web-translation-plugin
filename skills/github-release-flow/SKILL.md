@@ -128,7 +128,7 @@ Run in order:
 
 ```bash
 git status --short
-npm run check:logs
+npm run check:local
 ```
 
 If any check fails:

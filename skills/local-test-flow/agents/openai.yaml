@@ -1,0 +1,4 @@
+interface:
+  display_name: "Local Test Flow"
+  short_description: "Use /test to run quick, harness, or pre-ship local checks."
+  default_prompt: "Use /test quick, /test harness, or /test pre-ship. Prefer sub-agent execution when available and report concise PASS/FAIL outcomes."
