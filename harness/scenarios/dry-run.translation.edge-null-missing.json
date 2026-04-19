@@ -1,0 +1,9 @@
+{
+  "id": "dry-run.translation.edge-null-missing",
+  "description": "Edge case: expected output misses status and uses null metadata",
+  "mode": "dry-run",
+  "fixture": {
+    "inputPath": "harness/fixtures/input.sample.json",
+    "expectedOutputPath": "harness/fixtures/output.edge-null-missing.json"
+  }
+}

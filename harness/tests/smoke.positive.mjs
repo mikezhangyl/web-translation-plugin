@@ -23,6 +23,20 @@ const scenarios = [
     expectMatch: true,
     expectDiffIncludes: [],
     expectDifferenceValues: []
+  },
+  {
+    path: "harness/scenarios/dry-run.translation.edge-null-missing.json",
+    id: "dry-run.translation.edge-null-missing",
+    expectMatch: false,
+    expectDiffIncludes: ["status", "metadata"],
+    expectDifferenceValues: [
+      { path: "status", actual: "actual", expected: undefined },
+      {
+        path: "metadata",
+        actual: { generator: "harness-dry-run", confidence: 1 },
+        expected: null
+      }
+    ]
   }
 ]
 
@@ -105,4 +119,4 @@ for (const scenario of scenarios) {
   }
 }
 
-console.log("Harness positive smoke passed for baseline and variant scenarios.")
+console.log("Harness positive smoke passed for baseline, variant, and edge-null-missing scenarios.")

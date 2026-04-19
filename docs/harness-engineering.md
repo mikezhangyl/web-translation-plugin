@@ -20,6 +20,7 @@ Runnable minimal harness scaffold:
   - `.github/workflows/harness-smoke.yml`
   - `harness-positive`
   - `harness-negative`
+  - each job uploads `harness/reports/latest.json` as an artifact.
 - Report output path available (`harness/reports/latest.json`).
 - Strict scenario schema validation enabled in runner
   (`harness/contracts/scenario.schema.json`).
@@ -35,5 +36,5 @@ Runnable minimal harness scaffold:
 ## Next Suggested Build Order
 
 1. Add optional schema versioning strategy for future harness contract evolution.
-2. Add fixture-level edge cases for missing keys and null values in nested objects.
-3. Publish `harness/reports/latest.json` as a CI artifact for failing runs to speed debugging.
+2. Add additional fixture-level edge cases for nested arrays and type mismatches.
+3. Add report retention/cleanup policy for CI artifacts.

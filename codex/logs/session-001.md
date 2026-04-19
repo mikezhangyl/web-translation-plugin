@@ -1360,3 +1360,84 @@ Ship the current harness and CI split updates by committing all scoped changes o
 
 ### Result
 Success.
+
+## Step 41
+
+### User Instruction
+```text
+[Translated from Chinese] Okay.
+```
+
+### Understanding
+Proceed with the next agreed testing increment: add CI artifact upload for harness smoke jobs and add boundary fixture/scenario coverage.
+
+### Plan
+1. Update harness CI workflow to upload report artifacts for both smoke jobs.
+2. Add an edge scenario for missing keys and null values in expected output.
+3. Extend positive smoke suite assertions to include the new edge scenario.
+4. Update harness docs.
+5. Validate tests and log compliance.
+
+### Actions Taken
+- Updated `.github/workflows/harness-smoke.yml`:
+  - Added artifact upload step for `harness-positive`.
+  - Added artifact upload step for `harness-negative`.
+  - Both jobs now upload `harness/reports/latest.json` with `if-no-files-found: ignore`.
+- Added edge fixture:
+  - `harness/fixtures/output.edge-null-missing.json`
+- Added edge scenario:
+  - `harness/scenarios/dry-run.translation.edge-null-missing.json`
+- Updated `harness/tests/smoke.positive.mjs`:
+  - Added edge scenario expectations for missing `status` and `null` metadata comparison.
+  - Updated success message to include the edge scenario.
+- Updated docs:
+  - `harness/README.md`
+  - `docs/harness-engineering.md`
+
+### Validation
+- Ran `npm run harness:test:positive` (passed).
+- Ran `npm run harness:test:negative` (passed).
+- Ran `npm run harness:test` (passed).
+- Ran `npm run check:logs` (passed).
+
+### Result
+Success.
+
+## Step 42
+
+### User Instruction
+```text
+/ship
+```
+
+### Understanding
+Ship the latest CI artifact and edge-case harness test updates by committing and pushing the current branch, then confirm the existing draft PR is updated.
+
+### Plan
+1. Run preflight checks (branch/status, harness tests, log compliance).
+2. Commit all scoped changes.
+3. Push active branch.
+4. Verify draft PR #2 state and URL.
+
+### Actions Taken
+- Ran preflight:
+  - `git branch --show-current`
+  - `git status --short --branch`
+  - `npm run harness:test`
+  - `npm run check:logs`
+- Committed scoped changes:
+  - `git add .`
+  - `git commit -m "test(harness): add edge-case scenario and CI report artifacts"`
+- Pushed active branch:
+  - `git push`
+- Verified PR:
+  - `gh pr view 2 --repo mikezhangyl/translation-plugin --json number,url,state,isDraft,headRefName,title`
+
+### Validation
+- `npm run harness:test` passed before commit.
+- `npm run check:logs` passed before commit.
+- Push succeeded.
+- Draft PR #2 remained open and updated.
+
+### Result
+Success.

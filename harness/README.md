@@ -31,6 +31,7 @@ npm run harness:test:negative
 
 CI also runs these suites as separate jobs (`harness-positive` and `harness-negative`)
 via `.github/workflows/harness-smoke.yml`.
+Each job uploads `harness/reports/latest.json` as an artifact for debugging.
 
 Step 3. Inspect generated report.
 
@@ -44,6 +45,7 @@ Current built-in scenarios:
 
 - `dry-run.translation.baseline` (intentionally mismatch sample, demonstrates diff output)
 - `dry-run.translation.variant` (intentionally matched sample)
+- `dry-run.translation.edge-null-missing` (edge case: missing key + null value handling)
 - `dry-run.translation.invalid-extra-field` (intentionally invalid schema, for negative smoke test)
 
 Diff output uses nested paths, for example:

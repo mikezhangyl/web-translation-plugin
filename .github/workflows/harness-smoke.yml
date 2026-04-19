@@ -23,6 +23,14 @@ jobs:
       - name: Run positive harness smoke suite
         run: npm run harness:test:positive
 
+      - name: Upload harness report artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: harness-report-positive
+          path: harness/reports/latest.json
+          if-no-files-found: ignore
+
   harness-negative:
     runs-on: ubuntu-latest
     steps:
@@ -40,3 +48,11 @@ jobs:
 
       - name: Run negative harness smoke suite
         run: npm run harness:test:negative
+
+      - name: Upload harness report artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: harness-report-negative
+          path: harness/reports/latest.json
+          if-no-files-found: ignore
