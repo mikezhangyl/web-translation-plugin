@@ -1,0 +1,10 @@
+{
+  "name": "translation-plugin-harness",
+  "version": "0.1.0",
+  "mode": "dry-run",
+  "targets": [],
+  "reporting": {
+    "format": "json",
+    "outputDir": "harness/reports"
+  }
+}

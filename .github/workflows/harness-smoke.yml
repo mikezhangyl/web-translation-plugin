@@ -1,0 +1,58 @@
+name: Harness Smoke
+
+on:
+  pull_request:
+  push:
+
+jobs:
+  harness-positive:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run positive harness smoke suite
+        run: npm run harness:test:positive
+
+      - name: Upload harness report artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: harness-report-positive
+          path: harness/reports/latest.json
+          if-no-files-found: ignore
+
+  harness-negative:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run negative harness smoke suite
+        run: npm run harness:test:negative
+
+      - name: Upload harness report artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: harness-report-negative
+          path: harness/reports/latest.json
+          if-no-files-found: ignore

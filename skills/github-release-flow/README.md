@@ -1,14 +1,28 @@
 # GitHub Release Flow Skill
 
-Use this skill with the `/ship` trigger.
+Use this skill with two commands only.
 
-Format:
+Primary commands:
 
 `/ship <one-line-task-intent>`
+`/land`
 
 Optional exception:
 
 `/ship --no-pr <one-line-task-intent>`
+`/land --keep-branch`
+
+## Minimal Memory Rule
+
+Only remember:
+
+1. `/ship` = submit changes and create/update PR flow
+2. `/land` = merge approved PR and sync/cleanup
+
+Natural language fallback is supported:
+
+- "submit this change" -> `/ship`
+- "merge this PR" -> `/land`
 
 ## Samples
 
@@ -18,6 +32,8 @@ Optional exception:
 4. `/ship continue current branch work and refresh draft pr body`
 5. `/ship prepare release handoff after passing check:logs`
 6. `/ship --no-pr backup branch changes only`
+7. `/land`
+8. `/land --keep-branch`
 
 ## What the Skill Does
 
@@ -26,4 +42,6 @@ Optional exception:
 - Run preflight checks before commit/push.
 - Keep commit scope focused on the current objective.
 - Create a draft PR by default after push.
+- Merge approved PRs with `/land` using squash by default.
+- Sync local `main` after merge.
 - Produce concise push/PR handoff output with PR URL.

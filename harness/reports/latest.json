@@ -1,0 +1,74 @@
+{
+  "harness": "translation-plugin-harness",
+  "scenarioId": "dry-run.translation.edge-null-missing",
+  "mode": "dry-run",
+  "startedAt": "2026-04-19T06:10:50.486Z",
+  "completedAt": "2026-04-19T06:10:50.487Z",
+  "status": "passed",
+  "checks": [
+    {
+      "name": "scenario-shape",
+      "status": "passed"
+    },
+    {
+      "name": "fixture-input-exists",
+      "status": "passed"
+    },
+    {
+      "name": "fixture-expected-output-exists",
+      "status": "passed"
+    }
+  ],
+  "artifacts": {
+    "inputPath": "harness/fixtures/input.sample.json",
+    "expectedOutputPath": "harness/fixtures/output.edge-null-missing.json"
+  },
+  "comparison": {
+    "match": false,
+    "diffKeys": [
+      "status",
+      "metadata"
+    ],
+    "differences": [
+      {
+        "path": "status",
+        "actual": "actual"
+      },
+      {
+        "path": "metadata",
+        "actual": {
+          "generator": "harness-dry-run",
+          "confidence": 1
+        },
+        "expected": null
+      }
+    ],
+    "actual": {
+      "requestId": "sample-001",
+      "translatedText": "Hello harness",
+      "status": "actual",
+      "metadata": {
+        "generator": "harness-dry-run",
+        "confidence": 1
+      }
+    },
+    "expected": {
+      "requestId": "sample-001",
+      "translatedText": "Hello harness",
+      "metadata": null
+    }
+  },
+  "sample": {
+    "inputPreviewKeys": [
+      "requestId",
+      "sourceLanguage",
+      "targetLanguage",
+      "text"
+    ],
+    "expectedPreviewKeys": [
+      "requestId",
+      "translatedText",
+      "metadata"
+    ]
+  }
+}

@@ -28,6 +28,13 @@ Production output is generated under:
 
 - `build/chrome-mv3-prod`
 
+## Harness Scaffold
+
+Harness engineering scaffold files are located under:
+
+- `harness/`
+- `docs/harness-engineering.md`
+
 ## Logging Compliance
 
 Run log validation locally:
