@@ -758,3 +758,57 @@ Execute the previously proposed action: run `/ship` under the new default rule a
 
 ### Result
 Success.
+
+## Step 25
+
+### User Instruction
+```text
+[Translated from Chinese] Okay.
+```
+
+### Understanding
+Mark PR #1 as ready for review.
+
+### Plan
+1. Transition PR #1 from Draft to Ready.
+2. Verify PR state after transition.
+
+### Actions Taken
+- Ran:
+  - `gh pr ready 1 --repo mikezhangyl/translation-plugin`
+- Queried PR state:
+  - `gh pr view 1 --repo mikezhangyl/translation-plugin --json number,isDraft,state,url,title`
+
+### Validation
+- Command reported PR marked ready for review.
+- Verified final state:
+  - `isDraft: false`
+  - `state: OPEN`
+  - URL: `https://github.com/mikezhangyl/translation-plugin/pull/1`
+
+### Result
+Success.
+
+## Step 26
+
+### User Instruction
+```text
+[Translated from Chinese] Commit it and I will approve together.
+```
+
+### Understanding
+Finalize and push the remaining local log updates to the active PR branch.
+
+### Plan
+1. Run `npm run check:logs`.
+2. Commit `codex/current-session.md` and `codex/logs/session-001.md`.
+3. Push to the current branch.
+
+### Actions Taken
+- Started commit-and-push workflow.
+
+### Validation
+In progress.
+
+### Result
+In progress.
