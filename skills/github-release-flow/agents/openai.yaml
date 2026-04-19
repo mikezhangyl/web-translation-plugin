@@ -1,0 +1,4 @@
+interface:
+  display_name: "GitHub Release Flow"
+  short_description: "Enforce commit/push with default draft-PR release workflow."
+  default_prompt: "Use /ship with a one-line task intent, then run standardized GitHub delivery steps: branch decision, branch naming, preflight checks, commit, push, and create a draft PR by default (unless --no-pr)."
