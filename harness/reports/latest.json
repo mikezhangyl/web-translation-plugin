@@ -2,8 +2,8 @@
   "harness": "translation-plugin-harness",
   "scenarioId": "dry-run.translation.variant",
   "mode": "dry-run",
-  "startedAt": "2026-04-19T05:41:42.709Z",
-  "completedAt": "2026-04-19T05:41:42.710Z",
+  "startedAt": "2026-04-19T06:01:26.987Z",
+  "completedAt": "2026-04-19T06:01:26.988Z",
   "status": "passed",
   "checks": [
     {
@@ -26,6 +26,7 @@
   "comparison": {
     "match": true,
     "diffKeys": [],
+    "differences": [],
     "actual": {
       "requestId": "variant-001",
       "translatedText": "Harness variant",

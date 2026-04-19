@@ -28,21 +28,59 @@ const assert = (condition, message) => {
   }
 }
 
-const ensureScenarioShape = (scenario) => {
-  assert(typeof scenario?.id === "string" && scenario.id.length > 0, "Scenario.id is required")
-  assert(
-    typeof scenario?.description === "string" && scenario.description.length > 0,
-    "Scenario.description is required"
-  )
-  assert(scenario?.mode === "dry-run", "Scenario.mode must be 'dry-run'")
-  assert(typeof scenario?.fixture?.inputPath === "string", "Scenario.fixture.inputPath is required")
-  assert(
-    typeof scenario?.fixture?.expectedOutputPath === "string",
-    "Scenario.fixture.expectedOutputPath is required"
-  )
-}
-
 const isObject = (value) => value !== null && typeof value === "object"
+
+const validateBySchema = (value, schema, currentPath = "scenario") => {
+  const errors = []
+
+  if (schema.type === "object") {
+    if (!isObject(value) || Array.isArray(value)) {
+      errors.push(`${currentPath} must be an object`)
+      return errors
+    }
+
+    const props = schema.properties ?? {}
+    const required = schema.required ?? []
+
+    for (const key of required) {
+      if (!(key in value)) {
+        errors.push(`${currentPath}.${key} is required`)
+      }
+    }
+
+    if (schema.additionalProperties === false) {
+      const allowedKeys = new Set(Object.keys(props))
+      for (const key of Object.keys(value)) {
+        if (!allowedKeys.has(key)) {
+          errors.push(`${currentPath}.${key} is not allowed`)
+        }
+      }
+    }
+
+    for (const [key, propSchema] of Object.entries(props)) {
+      if (key in value) {
+        errors.push(...validateBySchema(value[key], propSchema, `${currentPath}.${key}`))
+      }
+    }
+
+    return errors
+  }
+
+  if (schema.type === "string") {
+    if (typeof value !== "string") {
+      errors.push(`${currentPath} must be a string`)
+      return errors
+    }
+    if (typeof schema.minLength === "number" && value.length < schema.minLength) {
+      errors.push(`${currentPath} must be at least ${schema.minLength} characters`)
+    }
+    if (Array.isArray(schema.enum) && !schema.enum.includes(value)) {
+      errors.push(`${currentPath} must be one of: ${schema.enum.join(", ")}`)
+    }
+  }
+
+  return errors
+}
 
 const diffPaths = (actual, expected, currentPath = "") => {
   if (!isObject(actual) || !isObject(expected)) {
@@ -70,6 +108,24 @@ const diffPaths = (actual, expected, currentPath = "") => {
   return paths
 }
 
+const getValueByPath = (obj, pathKey) => {
+  if (pathKey === "$") {
+    return obj
+  }
+
+  const parts = pathKey.split(".")
+  let current = obj
+
+  for (const part of parts) {
+    if (!isObject(current) || !(part in current)) {
+      return undefined
+    }
+    current = current[part]
+  }
+
+  return current
+}
+
 const buildActualFromInput = (input) => ({
   requestId: input.requestId,
   translatedText: input.text,
@@ -84,10 +140,17 @@ const main = () => {
   const args = parseArgs()
   const configPath = path.resolve(cwd, args.config ?? "harness/config/harness.config.example.json")
   const scenarioPath = path.resolve(cwd, args.scenario ?? "harness/scenarios/dry-run.translation.json")
+  const scenarioSchemaPath = path.resolve(cwd, "harness/contracts/scenario.schema.json")
 
   const config = readJson(configPath)
   const scenario = readJson(scenarioPath)
-  ensureScenarioShape(scenario)
+  const scenarioSchema = readJson(scenarioSchemaPath)
+
+  const schemaErrors = validateBySchema(scenario, scenarioSchema)
+  assert(
+    schemaErrors.length === 0,
+    `Scenario schema validation failed:\n- ${schemaErrors.join("\n- ")}`
+  )
 
   const inputPath = path.resolve(cwd, scenario.fixture.inputPath)
   const expectedOutputPath = path.resolve(cwd, scenario.fixture.expectedOutputPath)
@@ -104,6 +167,11 @@ const main = () => {
   const actual = buildActualFromInput(input)
   const changedPaths = diffPaths(actual, expected)
   const match = changedPaths.length === 0
+  const differences = changedPaths.map((pathKey) => ({
+    path: pathKey,
+    actual: getValueByPath(actual, pathKey),
+    expected: getValueByPath(expected, pathKey)
+  }))
 
   const report = {
     harness: config.name ?? "unnamed-harness",
@@ -124,6 +192,7 @@ const main = () => {
     comparison: {
       match,
       diffKeys: changedPaths,
+      differences,
       actual,
       expected
     },

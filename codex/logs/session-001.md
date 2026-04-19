@@ -1172,3 +1172,191 @@ Ship current deep-diff harness updates to the existing draft PR #2 by committing
 
 ### Result
 Success.
+
+## Step 36
+
+### User Instruction
+```text
+[Translated from Chinese] Continue.
+```
+
+### Understanding
+Continue the harness scaffold work by implementing the previously planned next step: strict scenario schema validation in the runner plus a negative smoke case for invalid scenario files.
+
+### Plan
+1. Load `harness/contracts/scenario.schema.json` in the harness runner.
+2. Enforce strict validation (required fields, type checks, enum checks, and `additionalProperties: false`).
+3. Add an intentionally invalid scenario file for negative coverage.
+4. Extend smoke tests to assert invalid scenario failure with schema validation error output.
+5. Update harness docs and validate with test commands.
+
+### Actions Taken
+- Updated `harness/scripts/run-harness.mjs`:
+  - Removed shape-only validation and added schema-based strict validation (`validateBySchema`).
+  - Loaded `harness/contracts/scenario.schema.json` and failed execution when validation errors are present.
+- Added `harness/scenarios/invalid.extra-field.json` as a deliberate invalid scenario (extra top-level field).
+- Updated `harness/tests/smoke.mjs`:
+  - Added negative test run for invalid scenario.
+  - Asserted non-zero exit and presence of `Scenario schema validation failed` in output.
+  - Updated completion message.
+- Updated docs:
+  - `harness/README.md` to include invalid scenario and strict schema enforcement note.
+  - `docs/harness-engineering.md` to reflect completed strict validation and negative smoke coverage.
+
+### Validation
+- Ran `npm run harness:test` and confirmed:
+  - baseline scenario path-diff behavior still passes.
+  - variant scenario full-match behavior still passes.
+  - invalid scenario fails as expected and is recognized by smoke assertions.
+
+### Result
+Success.
+
+## Step 37
+
+### User Instruction
+```text
+[Translated from Chinese] Do it.
+```
+
+### Understanding
+Implement the next harness step: enrich comparison output with value-level diffs (`actual` vs `expected`) and verify it with smoke tests.
+
+### Plan
+1. Extend harness runner report format with per-path value-level diff entries.
+2. Add smoke assertions to validate `comparison.differences` structure and values.
+3. Update harness docs to document the new report field.
+4. Run harness tests and log compliance checks.
+
+### Actions Taken
+- Updated `harness/scripts/run-harness.mjs`:
+  - Added `getValueByPath` helper.
+  - Added `comparison.differences` array with entries:
+    - `path`
+    - `actual`
+    - `expected`
+- Updated `harness/tests/smoke.mjs`:
+  - Added assertions for `comparison.differences`.
+  - Added scenario-level expected value checks for baseline diff entries.
+  - Fixed baseline expected values to match current fixture content (`Hello harness`, a non-English translated sample string, `expected-engine`).
+- Updated docs:
+  - `harness/README.md` to document `comparison.differences`.
+  - `docs/harness-engineering.md` to include value-level diff status and refreshed next build order.
+
+### Validation
+- Ran `npm run harness:test` (passed).
+- Ran `npm run check:logs` (passed).
+
+### Result
+Success.
+
+## Step 38
+
+### User Instruction
+```text
+[Translated from Chinese] Great, continue!
+```
+
+### Understanding
+Continue harness improvements by splitting smoke coverage into separate positive and negative suites to make CI failures easier to diagnose.
+
+### Plan
+1. Split positive checks into a dedicated smoke test file.
+2. Split negative schema-failure checks into a dedicated smoke test file.
+3. Keep a unified smoke entry point that runs both suites.
+4. Add npm scripts for independent suite execution and update docs.
+5. Validate harness tests and log compliance.
+
+### Actions Taken
+- Added `harness/tests/smoke.positive.mjs` for baseline and variant scenario assertions.
+- Added `harness/tests/smoke.negative.mjs` for invalid-schema scenario assertions.
+- Updated `harness/tests/smoke.mjs` to execute positive and negative suites as an aggregate entry point.
+- Updated `package.json` scripts:
+  - `harness:test:positive`
+  - `harness:test:negative`
+  - kept `harness:test` as the aggregate runner.
+- Updated docs:
+  - `harness/README.md` with separate suite commands.
+  - `docs/harness-engineering.md` with split-suite status and refreshed next build order.
+
+### Validation
+- Ran `npm run harness:test` (passed).
+- Ran `npm run check:logs` (passed).
+
+### Result
+Success.
+
+## Step 39
+
+### User Instruction
+```text
+[Translated from Chinese] Continue.
+```
+
+### Understanding
+Continue by implementing CI-level separation for harness smoke suites so positive and negative failures are reported as distinct jobs.
+
+### Plan
+1. Add a dedicated GitHub Actions workflow for harness smoke checks.
+2. Define two independent jobs:
+   - positive suite
+   - negative suite
+3. Update harness docs to reflect CI job separation.
+4. Validate local harness suites and log compliance.
+
+### Actions Taken
+- Added `.github/workflows/harness-smoke.yml` with two jobs:
+  - `harness-positive` -> runs `npm run harness:test:positive`
+  - `harness-negative` -> runs `npm run harness:test:negative`
+- Updated `harness/README.md` to mention CI job split and workflow location.
+- Updated `docs/harness-engineering.md`:
+  - marked split CI jobs as completed.
+  - refreshed next build-order suggestions.
+
+### Validation
+- Ran `npm run harness:test:positive` (passed).
+- Ran `npm run harness:test:negative` (passed).
+- Ran `npm run harness:test` (passed).
+- Ran `npm run check:logs` (passed).
+
+### Result
+Success.
+
+## Step 40
+
+### User Instruction
+```text
+/ship
+```
+
+### Understanding
+Ship the current harness and CI split updates by committing all scoped changes on the active branch, pushing to origin, and updating the existing draft PR.
+
+### Plan
+1. Run preflight checks (branch, status, harness tests, log compliance).
+2. Commit all scoped changes with a single message.
+3. Push the active branch to update the existing draft PR.
+4. Verify the draft PR metadata after push.
+
+### Actions Taken
+- Ran preflight:
+  - `git branch --show-current`
+  - `git status --short --branch`
+  - `npm run harness:test`
+  - `npm run check:logs`
+- Committed scoped changes with:
+  - `git add .`
+  - `git commit -m "ci(harness): split smoke suites into separate jobs"`
+- Pushed branch with:
+  - `git push`
+- Verified PR with:
+  - `gh pr view 2 --repo mikezhangyl/translation-plugin --json number,url,state,isDraft,headRefName,title`
+
+### Validation
+- `npm run harness:test` passed before commit.
+- `npm run check:logs` passed before commit.
+- Push succeeded.
+- Draft PR #2 remained open and updated.
+
+### Result
+Success.

@@ -22,6 +22,16 @@ Step 2. Run the harness smoke test.
 npm run harness:test
 ```
 
+Optional: run smoke suites independently for faster failure localization.
+
+```bash
+npm run harness:test:positive
+npm run harness:test:negative
+```
+
+CI also runs these suites as separate jobs (`harness-positive` and `harness-negative`)
+via `.github/workflows/harness-smoke.yml`.
+
 Step 3. Inspect generated report.
 
 ```bash
@@ -34,10 +44,20 @@ Current built-in scenarios:
 
 - `dry-run.translation.baseline` (intentionally mismatch sample, demonstrates diff output)
 - `dry-run.translation.variant` (intentionally matched sample)
+- `dry-run.translation.invalid-extra-field` (intentionally invalid schema, for negative smoke test)
 
 Diff output uses nested paths, for example:
 
 - `metadata.generator`
+
+Value-level diff output is also available in `comparison.differences`, each entry containing:
+
+- `path`
+- `actual`
+- `expected`
+
+Scenario loading now enforces strict schema validation from
+`harness/contracts/scenario.schema.json` (including `additionalProperties: false`).
 
 ## Structure
 

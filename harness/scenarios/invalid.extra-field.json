@@ -1,0 +1,10 @@
+{
+  "id": "dry-run.translation.invalid-extra-field",
+  "description": "Invalid scenario: includes top-level field forbidden by schema",
+  "mode": "dry-run",
+  "fixture": {
+    "inputPath": "harness/fixtures/input.sample.json",
+    "expectedOutputPath": "harness/fixtures/output.sample.json"
+  },
+  "unexpectedField": true
+}

@@ -10,6 +10,8 @@
     "package": "plasmo package",
     "check:logs": "node scripts/validate-logs.mjs",
     "harness:run": "node harness/scripts/run-harness.mjs --config harness/config/harness.config.example.json --scenario harness/scenarios/dry-run.translation.json",
+    "harness:test:positive": "node harness/tests/smoke.positive.mjs",
+    "harness:test:negative": "node harness/tests/smoke.negative.mjs",
     "harness:test": "node harness/tests/smoke.mjs"
   },
   "dependencies": {
