@@ -34,10 +34,10 @@ const readLiveConfig = () => {
   const fromFile = existsSync(envLocalPath) ? parseDotEnv(readFileSync(envLocalPath, "utf8")) : {}
   const pick = (key: string) => (process.env[key] ?? fromFile[key] ?? "").trim()
   return {
-    LLM_PROVIDER_FLAVOR: pick("LLM_PROVIDER_FLAVOR") || "openai-compatible",
-    LLM_API_KEY: pick("LLM_API_KEY"),
-    LLM_BASE_URL: pick("LLM_BASE_URL"),
-    LLM_MODEL: pick("LLM_MODEL")
+    LLM_PROVIDER_FLAVOR: pick("QWEN_PROVIDER_FLAVOR") || "openai-compatible",
+    LLM_API_KEY: pick("QWEN_API_KEY"),
+    LLM_BASE_URL: pick("QWEN_BASE_URL"),
+    LLM_MODEL: "qwen-mt-flash"
   }
 }
 
@@ -89,6 +89,7 @@ const seedLiveProviderStorage = async (
   })
   await popupPage.evaluate(async ({ keys, liveConfig }) => {
     await chrome.storage.local.set({
+      [keys.profileId]: "qwen-flash-card",
       [keys.providerFlavor]:
         liveConfig.LLM_PROVIDER_FLAVOR === "anthropic-compatible"
           ? "anthropic-compatible"
@@ -101,7 +102,7 @@ const seedLiveProviderStorage = async (
   await popupPage.close()
 }
 
-test("selection flow live provider returns non-empty translation and visible provider", async ({}, testInfo) => {
+test("selection flow live provider returns flash card content", async ({}, testInfo) => {
   test.skip(!isLiveEnabled, "Live E2E is disabled. Set RUN_LIVE_E2E=1 to run this spec.")
 
   const liveConfig = readLiveConfig()
@@ -136,16 +137,22 @@ test("selection flow live provider returns non-empty translation and visible pro
     await seedLiveProviderStorage(context, liveConfig)
     const page = await context.newPage()
     await page.goto("https://example.com", { waitUntil: "domcontentloaded" })
+    await page.evaluate(() => {
+      document.body.innerHTML = "<main><h1>performance</h1></main>"
+    })
 
     const card = await openCard(page)
-    const successText = card.getByTestId("translation-success-text")
+    const phoneticText = card.getByTestId("translation-line-phonetic")
+    const meaningText = card.getByTestId("translation-line-meaning")
+    const exampleText = card.getByTestId("translation-line-example")
     const providerText = card.getByTestId("translation-provider")
-
-    await expect(successText).toBeVisible({ timeout: 10_000 })
-    await expect(successText).toHaveText(/\S+/, { timeout: 10_000 })
-    await expect(providerText).toBeVisible()
-    await expect(providerText).toContainText("Provider:")
-    await expect(providerText).toContainText(/(openai_compatible|anthropic_compatible)/)
+    await expect(phoneticText).toBeVisible({ timeout: 10_000 })
+    await expect(phoneticText).toHaveText(/\S+/, { timeout: 10_000 })
+    await expect(meaningText).toBeVisible({ timeout: 10_000 })
+    await expect(meaningText).toHaveText(/\S+/, { timeout: 10_000 })
+    await expect(exampleText).toBeVisible({ timeout: 10_000 })
+    await expect(exampleText).toHaveText(/\S+/, { timeout: 10_000 })
+    await expect(providerText).toContainText("Model: qwen-mt-flash")
 
     await attachScreenshot(page, testInfo, "e2e-live-success")
   } finally {

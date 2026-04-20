@@ -173,3 +173,52 @@ test("translateText emits debug hook events and uses translation-expert prompt",
   assert.ok(successEvent)
   assert.equal(typeof successEvent?.durationMs, "number")
 })
+
+test("translateText returns structured flash card fields for qwen-mt-flash", async () => {
+  let capturedBody: Record<string, unknown> | null = null
+
+  const fetchMock: typeof fetch = async (_input, init) => {
+    capturedBody = JSON.parse(String(init?.body ?? "{}")) as Record<string, unknown>
+    return jsonResponse(200, {
+      choices: [
+        {
+          message: {
+            content: JSON.stringify({
+              phonetic: "/pərˈfɔːrməns/",
+              meaning: "表现；绩效",
+              example: "The team's performance improved this quarter. — 这个季度团队的表现提升了。"
+            })
+          }
+        }
+      ]
+    })
+  }
+
+  const result = await translateText(
+    {
+      text: "performance",
+      targetLang: "zh-CN"
+    },
+    {
+      env: {
+        LLM_PROVIDER_FLAVOR: "openai-compatible",
+        LLM_API_KEY: "qwen-key",
+        LLM_BASE_URL: "https://dashscope.aliyuncs.com/compatible-mode",
+        LLM_MODEL: "qwen-mt-flash"
+      },
+      fetchImpl: fetchMock
+    }
+  )
+
+  assert.equal(result.ok, true)
+  if (!result.ok) return
+
+  const messages = capturedBody?.messages as Array<Record<string, unknown>>
+  assert.equal(messages.length, 1)
+  assert.equal(String(messages[0]?.role), "user")
+  assert.match(String(messages[0]?.content), /Return strict JSON only/i)
+  assert.equal(result.data.card?.phonetic, "/pərˈfɔːrməns/")
+  assert.equal(result.data.card?.meaning, "表现；绩效")
+  assert.match(String(result.data.card?.example), /performance improved this quarter/i)
+  assert.match(result.data.translatedText, /表现；绩效/)
+})

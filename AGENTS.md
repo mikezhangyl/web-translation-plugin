@@ -36,6 +36,14 @@ Repository-level rules for engineering execution agents.
    Touch only code required by the request. Do not refactor unrelated areas.
 4. Goal-driven execution.
    Define verifiable success criteria, execute, then validate with concrete checks.
+5. Autonomous failure handling and retry loop.
+   - If a task is not complete due to failing checks/tests/integration errors, do not interrupt the user with interim failure-only updates.
+   - Perform direct diagnosis and remediation, then retry.
+   - Minimum retry attempts per failure cycle: 3.
+   - Each retry must be informed by the previous attempt's evidence (logs, traces, errors), not blind reruns.
+   - Report back when:
+     - the task succeeds, or
+     - the retry budget is exhausted (more than 3 attempts) with concise evidence and next best action.
 
 ## 3) Instruction Precedence and Conflict Resolution
 
@@ -63,6 +71,19 @@ Repository-level rules for engineering execution agents.
 6. Branch reuse rule:
    - Reuse the current feature branch while the same in-progress task is not merged.
    - Create a new feature branch when starting a distinct new task or after the previous task is merged.
+7. LLM onboarding gate (mandatory for new providers/models):
+   - For first-time connection to a new LLM provider/model family without prior successful run evidence in this repository:
+     - query official provider documentation first
+     - documentation query work MUST be executed by a sub-agent
+     - use `agents/docs-researcher.md` as the default documentation-query role template
+   - Before any UI/E2E/provider-integration test, run per-model curl connectivity checks.
+   - If any curl connectivity check fails, STOP downstream LLM integration/E2E tests and report error evidence.
+   - Only continue LLM integration/E2E tests after curl connectivity passes.
+8. Acceptance standard taxonomy (mandatory):
+   - `E2E` means real user-flow + real provider/network connectivity + real response validation.
+   - Mock/stub/fake-provider test flows MUST NOT be called `E2E`.
+   - Mock/stub/fake-provider flows must be labeled `mock`, `simulation`, or `contract`.
+   - Final acceptance for translation-provider integration is `live E2E` pass, not mock pass.
 
 ## 5) Workflow Surface Policy
 
@@ -70,12 +91,16 @@ Repository-level rules for engineering execution agents.
 2. `commands/` is compatibility-only and must remain thin shims that delegate to skills.
 3. New workflow logic must be added in skills, not duplicated in command shims.
 4. `/ship` preflight must use `npm run check:local` as the unified local gate.
+5. Test naming policy:
+   - `test:e2e` should point to live E2E behavior.
+   - mock browser flows must use explicit mock naming (for example `test:e2e:mock`).
 
 ## 6) Sub-Agent Role Defaults
 
 1. Prefer sub-agent execution for:
    - local test execution
    - change review
+   - provider/API documentation research
 2. Keep the main thread concise:
    - only high-signal pass/fail summary
    - actionable blocker details
@@ -84,6 +109,7 @@ Repository-level rules for engineering execution agents.
    - `planner`: planning breakdown only
    - `code-reviewer`: quality/risk review only
    - `build-error-resolver`: build/type error fixes only, minimal diffs
+   - `docs-researcher`: official-doc lookup and source-backed integration constraints only
 4. `/test` execution policy:
    - `/test` must run through `test-runner` sub-agent.
    - Main thread should not execute test commands directly by default.

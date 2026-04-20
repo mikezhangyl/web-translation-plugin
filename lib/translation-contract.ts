@@ -5,7 +5,21 @@ export type TranslateRequest = {
   text: string
   targetLang: "zh-CN"
   sourceLang?: string
+  modelOverride?: string
+  traceId?: string
   e2eMode?: "openai_success" | "anthropic_success" | "provider_fail"
+}
+
+export type TranslationEnvDefaultsRequest = {
+  profileId?: "custom" | "qwen-flash-card"
+  providerFlavor?: TranslationProviderFlavor
+  model?: string
+}
+
+export type TranslationCard = {
+  phonetic: string
+  meaning: string
+  example: string
 }
 
 export type TranslateResponse = {
@@ -13,6 +27,7 @@ export type TranslateResponse = {
   detectedSourceLang?: string
   provider: TranslationProvider
   fallbackUsed: boolean
+  card?: TranslationCard
   errorCode?: string
 }
 
@@ -47,9 +62,107 @@ export type TranslateResult =
       error: TranslateError
     }
 
+export type TranslationComparisonItem =
+  | {
+      model: string
+      ok: true
+      translatedText: string
+      provider: TranslationProvider
+      durationMs: number
+    }
+  | {
+      model: string
+      ok: false
+      provider: TranslationProvider
+      errorCode: TranslateErrorCode
+      message: string
+      durationMs: number
+    }
+
+export type TranslationComparisonResponse = {
+  overallDurationMs: number
+  results: TranslationComparisonItem[]
+}
+
+export type TranslationCompareResult =
+  | {
+      ok: true
+      data: TranslationComparisonResponse
+    }
+  | {
+      ok: false
+      error: TranslateError
+    }
+
 export type TranslationMessage = {
   type: "translation:translate"
   payload: TranslateRequest
 }
 
-export type TranslationMessageResponse = TranslateResult
+export type TranslationDebugLogMessage = {
+  type: "translation:debug-log"
+  payload: {
+    level?: "info" | "error"
+    event: string
+    payload?: Record<string, unknown>
+  }
+}
+
+export type TranslationEnvDefaultsMessage = {
+  type: "translation:env-defaults"
+  payload?: TranslationEnvDefaultsRequest
+}
+
+export type TranslationEnvDefaultsResponse = {
+  ok: true
+  data: {
+    profileId: "custom" | "qwen-flash-card"
+    providerFlavor: TranslationProviderFlavor
+    apiKey: string
+    baseUrl: string
+    model: string
+  }
+}
+
+export type TranslationStreamStartMessage = {
+  type: "translation:stream-start"
+  payload: TranslateRequest
+}
+
+export type TranslationStreamClientMessage = TranslationStreamStartMessage
+
+export type TranslationStreamServerMessage =
+  | {
+      type: "translation:stream-update"
+      payload: {
+        traceId?: string
+        model?: string
+        provider: TranslationProvider
+        card: Partial<TranslationCard>
+        translatedText: string
+      }
+    }
+  | {
+      type: "translation:stream-complete"
+      payload: {
+        result: TranslateResult
+      }
+    }
+  | {
+      type: "translation:stream-error"
+      payload: {
+        message: string
+      }
+    }
+
+export type TranslationCompareMessage = {
+  type: "translation:compare"
+  payload: TranslateRequest & {
+    models?: string[]
+  }
+}
+
+export type TranslationMessageResponse =
+  | TranslateResult
+  | TranslationCompareResult
+  | TranslationEnvDefaultsResponse

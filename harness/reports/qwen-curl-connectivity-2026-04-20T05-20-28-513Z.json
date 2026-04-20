@@ -1,0 +1,67 @@
+{
+  "generatedAt": "2026-04-20T05:20:30.124Z",
+  "startedAt": "2026-04-20T05:20:28.515Z",
+  "providerFlavor": "openai-compatible",
+  "baseUrl": "https://dashscope.aliyuncs.com/compatible-mode",
+  "models": [
+    "qwen-mt-plus",
+    "qwen-mt-flash",
+    "qwen-mt-lite",
+    "qwen-mt-turbo"
+  ],
+  "summary": {
+    "total": 4,
+    "passed": 4,
+    "failed": 0
+  },
+  "results": [
+    {
+      "model": "qwen-mt-plus",
+      "ok": true,
+      "endpoint": "https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions",
+      "httpCode": 200,
+      "connectMs": 4,
+      "firstTokenMs": 463,
+      "totalMs": 463,
+      "elapsedMs": 505,
+      "providerErrorMessage": "",
+      "responsePreview": "{\"choices\":[{\"message\":{\"content\":\"你好\",\"role\":\"assistant\"},\"finish_reason\":\"stop\",\"index\":0,\"logprobs\":null}],\"object\":\"chat.completion\",\"usage\":{\"prompt_tokens\":32,\"completion_tokens\":1,\"total_tokens\":33},\"created\":1776662429,\"system_fingerprint\":null,\"model\":\"qwen-mt-plus\",\"id\":\"chatcmpl-6f9388d4-4028-9e38-88d2-ef94e4753e04\"}"
+    },
+    {
+      "model": "qwen-mt-flash",
+      "ok": true,
+      "endpoint": "https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions",
+      "httpCode": 200,
+      "connectMs": 10,
+      "firstTokenMs": 302,
+      "totalMs": 302,
+      "elapsedMs": 325,
+      "providerErrorMessage": "",
+      "responsePreview": "{\"choices\":[{\"message\":{\"content\":\"你好\",\"role\":\"assistant\"},\"finish_reason\":\"stop\",\"index\":0,\"logprobs\":null}],\"object\":\"chat.completion\",\"usage\":{\"prompt_tokens\":32,\"completion_tokens\":1,\"total_tokens\":33},\"created\":1776662429,\"system_fingerprint\":null,\"model\":\"qwen-mt-flash\",\"id\":\"chatcmpl-431ee4f7-4964-92d1-870d-73751ea087dc\"}"
+    },
+    {
+      "model": "qwen-mt-lite",
+      "ok": true,
+      "endpoint": "https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions",
+      "httpCode": 200,
+      "connectMs": 3,
+      "firstTokenMs": 339,
+      "totalMs": 339,
+      "elapsedMs": 356,
+      "providerErrorMessage": "",
+      "responsePreview": "{\"choices\":[{\"message\":{\"content\":\"你好\",\"role\":\"assistant\"},\"finish_reason\":\"stop\",\"index\":0,\"logprobs\":null}],\"object\":\"chat.completion\",\"usage\":{\"prompt_tokens\":32,\"completion_tokens\":1,\"total_tokens\":33},\"created\":1776662430,\"system_fingerprint\":null,\"model\":\"qwen-mt-lite\",\"id\":\"chatcmpl-41485f7d-e799-956d-9bb8-bf42111b7b10\"}"
+    },
+    {
+      "model": "qwen-mt-turbo",
+      "ok": true,
+      "endpoint": "https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions",
+      "httpCode": 200,
+      "connectMs": 3,
+      "firstTokenMs": 398,
+      "totalMs": 398,
+      "elapsedMs": 422,
+      "providerErrorMessage": "",
+      "responsePreview": "{\"choices\":[{\"message\":{\"content\":\"你好\",\"role\":\"assistant\"},\"finish_reason\":\"stop\",\"index\":0,\"logprobs\":null}],\"object\":\"chat.completion\",\"usage\":{\"prompt_tokens\":32,\"completion_tokens\":1,\"total_tokens\":33},\"created\":1776662430,\"system_fingerprint\":null,\"model\":\"qwen-mt-turbo\",\"id\":\"chatcmpl-de2458b7-27d4-9610-a9c7-d2037c21bca5\"}"
+    }
+  ]
+}

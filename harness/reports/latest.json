@@ -3,8 +3,8 @@
   "scenarioSchemaVersion": "1.0",
   "scenarioId": "dry-run.translation.edge-array-type-mismatch",
   "mode": "dry-run",
-  "startedAt": "2026-04-20T04:48:44.696Z",
-  "completedAt": "2026-04-20T04:48:44.697Z",
+  "startedAt": "2026-04-20T10:01:25.164Z",
+  "completedAt": "2026-04-20T10:01:25.165Z",
   "status": "passed",
   "checks": [
     {

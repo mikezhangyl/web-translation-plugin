@@ -1,0 +1,47 @@
+{
+  "generatedAt": "2026-04-20T05:05:51.909Z",
+  "startedAt": "2026-04-20T05:05:02.141Z",
+  "providerFlavor": "openai-compatible",
+  "baseUrl": "https://dashscope.aliyuncs.com/compatible-mode",
+  "models": [
+    "qwen-mt-plus",
+    "qwen-mt-flash",
+    "qwen-mt-lite",
+    "qwen-mt-turbo"
+  ],
+  "summary": {
+    "total": 4,
+    "passed": 0,
+    "failed": 4,
+    "avgE2eMs": null,
+    "avgFirstTokenMs": null,
+    "p95E2eMs": null,
+    "p95FirstTokenMs": null
+  },
+  "results": [
+    {
+      "model": "qwen-mt-plus",
+      "ok": false,
+      "providerFlavor": "openai-compatible",
+      "error": "locator.waitFor: Timeout 10000ms exceeded.\nCall log:\n\u001b[2m  - waiting for getByTestId('translation-card').getByTestId('translation-success-text') to be visible\u001b[22m\n"
+    },
+    {
+      "model": "qwen-mt-flash",
+      "ok": false,
+      "providerFlavor": "openai-compatible",
+      "error": "locator.waitFor: Timeout 10000ms exceeded.\nCall log:\n\u001b[2m  - waiting for getByTestId('translation-card').getByTestId('translation-success-text') to be visible\u001b[22m\n"
+    },
+    {
+      "model": "qwen-mt-lite",
+      "ok": false,
+      "providerFlavor": "openai-compatible",
+      "error": "locator.waitFor: Timeout 10000ms exceeded.\nCall log:\n\u001b[2m  - waiting for getByTestId('translation-card').getByTestId('translation-success-text') to be visible\u001b[22m\n"
+    },
+    {
+      "model": "qwen-mt-turbo",
+      "ok": false,
+      "providerFlavor": "openai-compatible",
+      "error": "locator.waitFor: Timeout 10000ms exceeded.\nCall log:\n\u001b[2m  - waiting for getByTestId('translation-card').getByTestId('translation-success-text') to be visible\u001b[22m\n"
+    }
+  ]
+}

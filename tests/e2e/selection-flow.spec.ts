@@ -93,8 +93,11 @@ test("selection flow shows openai-compatible success", async ({}, testInfo) => {
   await runWithExtension(async ({ page }) => {
     await setE2EMode(page, "openai_success")
     const card = await openCard(page)
-    await expect(card.getByTestId("translation-success-text")).toHaveText("黑曜石（OpenAI）")
-    await expect(card.getByTestId("translation-provider")).toHaveText("Provider: openai_compatible")
+    await expect(card.getByTestId("translation-line-phonetic")).toHaveText("/əbˈsɪdiən/")
+    await expect(card.getByTestId("translation-line-meaning")).toHaveText("黑曜石（OpenAI）")
+    await expect(card.getByTestId("translation-line-example")).toContainText("Obsidian helps me organize my notes.")
+    await expect(card.getByTestId("translation-provider")).toContainText("Provider: openai_compatible")
+    await expect(card.getByTestId("translation-provider")).toContainText("Model: qwen-mt-flash")
     await attachScreenshot(page, testInfo, "e2e-openai-success")
   })
 })
@@ -103,8 +106,10 @@ test("selection flow shows anthropic-compatible success", async ({}, testInfo) =
   await runWithExtension(async ({ page }) => {
     await setE2EMode(page, "anthropic_success")
     const card = await openCard(page)
-    await expect(card.getByTestId("translation-success-text")).toHaveText("黑曜石（Anthropic）")
-    await expect(card.getByTestId("translation-provider")).toHaveText("Provider: anthropic_compatible")
+    await expect(card.getByTestId("translation-line-phonetic")).toHaveText("/əbˈsɪdiən/")
+    await expect(card.getByTestId("translation-line-meaning")).toHaveText("黑曜石（Anthropic）")
+    await expect(card.getByTestId("translation-line-example")).toContainText("Obsidian helps me organize my notes.")
+    await expect(card.getByTestId("translation-provider")).toContainText("Provider: anthropic_compatible")
     await attachScreenshot(page, testInfo, "e2e-anthropic-success")
   })
 })
@@ -116,6 +121,94 @@ test("selection flow shows error when configured provider fails", async ({}, tes
     await expect(card.getByTestId("translation-error")).toContainText("Translation unavailable")
     await expect(card.getByTestId("translation-placeholder")).toBeVisible()
     await attachScreenshot(page, testInfo, "e2e-provider-fail")
+  })
+})
+
+test("translation card remains open after mouse leaves dot/card area", async ({}) => {
+  await runWithExtension(async ({ page }) => {
+    await setE2EMode(page, "openai_success")
+    const card = await openCard(page)
+    await page.mouse.move(2, 2)
+    await expect(card).toBeVisible()
+  })
+})
+
+test("translation card closes when clicking outside", async ({}) => {
+  await runWithExtension(async ({ page }) => {
+    await setE2EMode(page, "openai_success")
+    const card = await openCard(page)
+    await expect(card).toBeVisible()
+    await page.mouse.click(5, 5)
+    await expect(card).toBeHidden()
+  })
+})
+
+test("translation card closes with X button", async ({}) => {
+  await runWithExtension(async ({ page }) => {
+    await setE2EMode(page, "openai_success")
+    const card = await openCard(page)
+    await expect(card).toBeVisible()
+    await card.getByRole("button", { name: "Close translation card" }).click()
+    await expect(card).toBeHidden()
+  })
+})
+
+test("translation card closes with Escape", async ({}) => {
+  await runWithExtension(async ({ page }) => {
+    await setE2EMode(page, "openai_success")
+    const card = await openCard(page)
+    await expect(card).toBeVisible()
+    await page.keyboard.press("Escape")
+    await expect(card).toBeHidden()
+  })
+})
+
+test("re-selecting same word uses cache and avoids duplicate runtime request", async ({}) => {
+  await runWithExtension(async ({ context, page }) => {
+    await setE2EMode(page, "openai_success")
+
+    const extensionId = await getExtensionId(context)
+    const popupPage = await context.newPage()
+    await popupPage.goto(`chrome-extension://${extensionId}/popup.html`, {
+      waitUntil: "domcontentloaded"
+    })
+    await popupPage.evaluate(async (keys) => {
+      await chrome.storage.local.set({
+        [keys.debugEnabled]: true,
+        [keys.debugLogs]: []
+      })
+    }, TRANSLATION_STORAGE_KEYS)
+    await popupPage.close()
+
+    const firstCard = await openCard(page)
+    await expect(firstCard.getByTestId("translation-line-meaning")).toHaveText("黑曜石（OpenAI）")
+    await firstCard.getByRole("button", { name: "Close translation card" }).click()
+
+    const secondCard = await openCard(page)
+    await expect(secondCard.getByTestId("translation-line-meaning")).toHaveText("黑曜石（OpenAI）")
+
+    const inspectPopup = await context.newPage()
+    await inspectPopup.goto(`chrome-extension://${extensionId}/popup.html`, {
+      waitUntil: "domcontentloaded"
+    })
+    const requestCount = await inspectPopup.evaluate(async (keys) => {
+      const values = await chrome.storage.local.get([keys.debugLogs])
+      const logs = Array.isArray(values[keys.debugLogs]) ? values[keys.debugLogs] : []
+      const successEvents = logs.filter((entry) => entry?.event === "request_succeeded")
+      const cacheHitEvents = logs.filter((entry) => entry?.event === "ui_cache_hit")
+      return {
+        requestCount: logs.filter((entry) => entry?.event === "request_received").length,
+        cacheHitCount: cacheHitEvents.length,
+        successModels: successEvents.map((entry) => String(entry?.payload?.model ?? "")),
+        cacheHitModels: cacheHitEvents.map((entry) => String(entry?.payload?.model ?? ""))
+      }
+    }, TRANSLATION_STORAGE_KEYS)
+    await inspectPopup.close()
+
+    await expect(requestCount.requestCount).toBe(1)
+    await expect(requestCount.cacheHitCount).toBeGreaterThan(0)
+    await expect(requestCount.successModels.every((model) => model.length > 0)).toBeTruthy()
+    await expect(requestCount.cacheHitModels.every((model) => model === "" || model.length > 0)).toBeTruthy()
   })
 })
 
@@ -134,11 +227,11 @@ test("popup troubleshooting panel shows llm interaction logs with timing", async
     await page.keyboard.press("Escape")
     await setE2EMode(page, "openai_success")
     const secondCard = await openCard(page)
-    await expect(secondCard.getByTestId("translation-success-text")).toHaveText("黑曜石（OpenAI）")
+    await expect(secondCard.getByTestId("translation-line-meaning")).toHaveText("黑曜石（OpenAI）")
 
     await popupPage.bringToFront()
     await expect(
-      popupPage.getByRole("heading", { name: "LLM Interaction Logs" })
+      popupPage.getByRole("heading", { name: "Pipeline & LLM Logs" })
     ).toBeVisible()
     await popupPage.getByRole("button", { name: "Refresh Logs" }).click()
     await popupPage.waitForFunction(

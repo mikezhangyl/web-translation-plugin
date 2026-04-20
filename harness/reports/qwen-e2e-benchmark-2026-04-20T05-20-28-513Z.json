@@ -1,0 +1,83 @@
+{
+  "generatedAt": "2026-04-20T05:20:42.566Z",
+  "startedAt": "2026-04-20T05:20:28.515Z",
+  "providerFlavor": "openai-compatible",
+  "baseUrl": "https://dashscope.aliyuncs.com/compatible-mode",
+  "models": [
+    "qwen-mt-plus",
+    "qwen-mt-flash",
+    "qwen-mt-lite",
+    "qwen-mt-turbo"
+  ],
+  "summary": {
+    "total": 4,
+    "passed": 0,
+    "failed": 4,
+    "avgE2eMs": null,
+    "avgFirstTokenMs": null,
+    "p95E2eMs": null,
+    "p95FirstTokenMs": null
+  },
+  "results": [
+    {
+      "model": "qwen-mt-plus",
+      "ok": false,
+      "providerFlavor": "openai-compatible",
+      "terminalState": "error",
+      "error": "Translation unavailable (openai_compatible:BAD_REQUEST)",
+      "e2eMs": 884,
+      "firstTokenMs": null,
+      "requestDurationMs": 414,
+      "httpStatus": 400,
+      "requestUrl": "https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions",
+      "providerErrorCode": "BAD_REQUEST",
+      "providerErrorMessage": "{\"error\":{\"message\":\"Role must be in [user, assistant].\",\"type\":\"invalid_request_error\",\"param\":null,\"code\":\"invalid_parameter_error\"},\"id\":\"chatcmpl-cec729fd-234b-9b6a-93b9-aaee9ff488ea\",\"request_id\":\"cec729fd-234b-9b6a-93b9-aaee9ff488ea\"}",
+      "screenshotPath": "/Users/mikezhang/Coding/AI-Learning/vibe-coding-os-translation-plugin/harness/reports/qwen-benchmark-artifacts/2026-04-20T05-20-28-513Z/qwen-mt-plus.png"
+    },
+    {
+      "model": "qwen-mt-flash",
+      "ok": false,
+      "providerFlavor": "openai-compatible",
+      "terminalState": "error",
+      "error": "Translation unavailable (openai_compatible:BAD_REQUEST)",
+      "e2eMs": 905,
+      "firstTokenMs": null,
+      "requestDurationMs": 444,
+      "httpStatus": 400,
+      "requestUrl": "https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions",
+      "providerErrorCode": "BAD_REQUEST",
+      "providerErrorMessage": "{\"error\":{\"message\":\"Role must be in [user, assistant].\",\"type\":\"invalid_request_error\",\"param\":null,\"code\":\"invalid_parameter_error\"},\"id\":\"chatcmpl-14dbb636-86c5-95f9-99be-1a1327d91f8c\",\"request_id\":\"14dbb636-86c5-95f9-99be-1a1327d91f8c\"}",
+      "screenshotPath": "/Users/mikezhang/Coding/AI-Learning/vibe-coding-os-translation-plugin/harness/reports/qwen-benchmark-artifacts/2026-04-20T05-20-28-513Z/qwen-mt-flash.png"
+    },
+    {
+      "model": "qwen-mt-lite",
+      "ok": false,
+      "providerFlavor": "openai-compatible",
+      "terminalState": "error",
+      "error": "Translation unavailable (openai_compatible:BAD_REQUEST)",
+      "e2eMs": 900,
+      "firstTokenMs": null,
+      "requestDurationMs": 738,
+      "httpStatus": 400,
+      "requestUrl": "https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions",
+      "providerErrorCode": "BAD_REQUEST",
+      "providerErrorMessage": "{\"error\":{\"message\":\"Role must be in [user, assistant].\",\"type\":\"invalid_request_error\",\"param\":null,\"code\":\"invalid_parameter_error\"},\"id\":\"chatcmpl-8e463a75-48ed-960c-8727-168625024bfb\",\"request_id\":\"8e463a75-48ed-960c-8727-168625024bfb\"}",
+      "screenshotPath": "/Users/mikezhang/Coding/AI-Learning/vibe-coding-os-translation-plugin/harness/reports/qwen-benchmark-artifacts/2026-04-20T05-20-28-513Z/qwen-mt-lite.png"
+    },
+    {
+      "model": "qwen-mt-turbo",
+      "ok": false,
+      "providerFlavor": "openai-compatible",
+      "terminalState": "error",
+      "error": "Translation unavailable (openai_compatible:BAD_REQUEST)",
+      "e2eMs": 878,
+      "firstTokenMs": null,
+      "requestDurationMs": 522,
+      "httpStatus": 400,
+      "requestUrl": "https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions",
+      "providerErrorCode": "BAD_REQUEST",
+      "providerErrorMessage": "{\"error\":{\"message\":\"Role must be in [user, assistant].\",\"type\":\"invalid_request_error\",\"param\":null,\"code\":\"invalid_parameter_error\"},\"id\":\"chatcmpl-6df92793-cd37-9dd1-a3c8-a53c6efc28c6\",\"request_id\":\"6df92793-cd37-9dd1-a3c8-a53c6efc28c6\"}",
+      "screenshotPath": "/Users/mikezhang/Coding/AI-Learning/vibe-coding-os-translation-plugin/harness/reports/qwen-benchmark-artifacts/2026-04-20T05-20-28-513Z/qwen-mt-turbo.png"
+    }
+  ]
+}

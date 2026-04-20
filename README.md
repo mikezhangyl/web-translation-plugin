@@ -60,10 +60,16 @@ You can also configure provider settings in the extension popup:
 3. Keep `Enable troubleshooting logs` switched ON (default).
 4. Click `Save`.
 
+Multi-model result view in selection card:
+
+- Configure `Benchmark Models (comma-separated)` in popup settings.
+- Select a word on page and hover the dot.
+- The card shows all model outputs in one list, each with per-model total time (`durationMs`), plus an overall benchmark total time.
+
 Troubleshooting panel in popup:
 
 - shows runtime logs from background and LLM provider adapters
-- includes request/response previews and per-request timing (`durationMs`)
+- includes request/response previews and per-request timing (`durationMs`, `ttfbMs`)
 - supports `Refresh Logs` and `Clear Logs`
 
 Logs are stored in `chrome.storage.local` and can be toggled by the troubleshooting switch.
@@ -75,6 +81,38 @@ npm run test:live
 ```
 
 This runs one real translation request with your configured `LLM_*` values and prints masked config + latency/result.
+
+Qwen multi-model E2E benchmark (uses `QWEN_*` values in `.env.local`):
+
+```bash
+npm run bench:qwen:e2e
+```
+
+Execution gate:
+
+- Step 1: per-model curl connectivity check (hard gate)
+- Step 2: E2E benchmark only if all curl checks pass
+- If any curl check fails, benchmark stops and reports the error.
+
+Outputs are written to:
+
+- `harness/reports/qwen-curl-connectivity-<timestamp>.json`
+- `harness/reports/qwen-curl-connectivity-<timestamp>.md`
+- latest pointers:
+  - `harness/reports/qwen-curl-connectivity-latest.json`
+  - `harness/reports/qwen-curl-connectivity-latest.md`
+- `harness/reports/qwen-e2e-benchmark-<timestamp>.json`
+- `harness/reports/qwen-e2e-benchmark-<timestamp>.md`
+- latest pointers:
+  - `harness/reports/qwen-e2e-benchmark-latest.json`
+  - `harness/reports/qwen-e2e-benchmark-latest.md`
+
+Per-model KPIs include:
+
+- translation output text
+- end-to-end UI latency (`e2eMs`)
+- first-token/first-byte latency from provider response (`firstTokenMs` / `ttfbMs`)
+- request total duration (`requestDurationMs`)
 
 Popup settings are stored in `chrome.storage.local` and take precedence over environment variables.
 
@@ -127,6 +165,11 @@ Run unified local release gate:
 npm run check:local
 ```
 
+`check:local` includes a conditional live E2E gate:
+
+- if live provider config is available, `test:e2e` (live) is enforced
+- if live provider config is unavailable, live gate is skipped with explicit log output
+
 This validates:
 
 - `codex/current-session.md` format and next step pointer.
@@ -142,16 +185,22 @@ Install Playwright browser once:
 npx playwright install chromium
 ```
 
-Run selection-flow E2E:
+Run live E2E (real provider connectivity, acceptance path):
 
 ```bash
 npm run test:e2e
 ```
 
-This test loads the extension from `build/chrome-mv3-prod` and verifies:
+Run mock/simulation browser-flow tests (non-E2E):
+
+```bash
+npm run test:e2e:mock
+```
+
+Mock browser-flow test verifies:
 
 - success path: select text -> loading -> OpenAI-compatible success
 - success path: select text -> loading -> Anthropic-compatible success
 - failure path: provider fails -> error UI + placeholder details
 
-Note: E2E uses internal mock modes on `example.com` to make provider behavior deterministic.
+`test:e2e:mock` uses internal mock modes on `example.com` for deterministic simulation and is not used as final live-integration acceptance.
