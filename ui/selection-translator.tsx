@@ -81,13 +81,13 @@ type TranslationState =
       status: "success"
       translatedText: string
       detectedSourceLang?: string
-      provider: "azure" | "deepl"
+      provider: "openai_compatible" | "anthropic_compatible"
       fallbackUsed: boolean
     }
   | {
       status: "error"
       errorCode: string
-      provider: "azure" | "deepl"
+      provider: "openai_compatible" | "anthropic_compatible"
       message: string
     }
 
@@ -97,7 +97,7 @@ const requestTranslation = async (request: TranslateRequest): Promise<Translatio
       ok: false,
       error: {
         code: "UNKNOWN",
-        provider: "azure",
+        provider: "openai_compatible",
         message: "Runtime messaging is unavailable"
       }
     }
@@ -115,9 +115,9 @@ const getE2EMode = (): TranslateRequest["e2eMode"] => {
   }
   const value = document.documentElement.getAttribute("data-translation-e2e-mode") ?? ""
   if (
-    value === "azure_success" ||
-    value === "azure_rate_limit_then_deepl_success" ||
-    value === "dual_fail"
+    value === "openai_success" ||
+    value === "anthropic_success" ||
+    value === "provider_fail"
   ) {
     return value
   }
@@ -239,7 +239,7 @@ const MainWorldSelectionTranslator = () => {
         setTranslationState({
           status: "error",
           errorCode: "UNKNOWN",
-          provider: "azure",
+          provider: "openai_compatible",
           message: error instanceof Error ? error.message : "Unexpected translation failure"
         })
       })
@@ -343,7 +343,6 @@ const MainWorldSelectionTranslator = () => {
                   data-testid="translation-provider"
                   style={{ color: "#6b6f78", fontSize: 16, margin: 0 }}>
                   Provider: {translationState.provider}
-                  {translationState.fallbackUsed ? " (fallback)" : ""}
                 </p>
               </>
             ) : null}

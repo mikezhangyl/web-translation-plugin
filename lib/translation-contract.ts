@@ -1,10 +1,11 @@
-export type TranslationProvider = "azure" | "deepl"
+export type TranslationProvider = "openai_compatible" | "anthropic_compatible"
+export type TranslationProviderFlavor = "openai-compatible" | "anthropic-compatible"
 
 export type TranslateRequest = {
   text: string
   targetLang: "zh-CN"
   sourceLang?: string
-  e2eMode?: "azure_success" | "azure_rate_limit_then_deepl_success" | "dual_fail"
+  e2eMode?: "openai_success" | "anthropic_success" | "provider_fail"
 }
 
 export type TranslateResponse = {
@@ -17,7 +18,8 @@ export type TranslateResponse = {
 
 export type TranslateErrorCode =
   | "MISSING_API_KEY"
-  | "MISSING_REGION"
+  | "MISSING_BASE_URL"
+  | "MISSING_MODEL"
   | "BAD_REQUEST"
   | "UNAUTHORIZED"
   | "RATE_LIMITED"

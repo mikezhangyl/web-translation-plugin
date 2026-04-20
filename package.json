@@ -10,6 +10,8 @@
     "package": "plasmo package",
     "test:ui-logic": "tsx --test tests/*.test.ts",
     "test:e2e": "npm run build && playwright test",
+    "test:e2e:live": "node scripts/run-live-e2e.mjs",
+    "test:live": "tsx tests/live/live-translation.test.ts",
     "check:logs": "node scripts/validate-logs.mjs",
     "check:local": "npm run test:ui-logic && npm run harness:test && npm run check:logs",
     "check:verify": "npm run check:local && npm run build && npm run package",
@@ -35,6 +37,9 @@
     "typescript": "5.3.3"
   },
   "manifest": {
+    "permissions": [
+      "storage"
+    ],
     "host_permissions": [
       "https://*/*"
     ]

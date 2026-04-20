@@ -33,26 +33,55 @@ Production output is generated under:
 Set environment variables before running `npm run dev` or `npm run build`:
 
 ```bash
-export AZURE_TRANSLATOR_KEY="your-azure-key"
-export AZURE_TRANSLATOR_REGION="your-azure-region"
-export DEEPL_API_KEY="your-deepl-key"
-export DEEPL_API_URL="https://api-free.deepl.com/v2/translate"
+export LLM_PROVIDER_FLAVOR="openai-compatible" # or anthropic-compatible
+export LLM_API_KEY="your-api-key"
+export LLM_BASE_URL="https://api.openai.com"
+export LLM_MODEL="gpt-4o-mini"
 ```
 
 If your shell env is not picked up by Plasmo build, set `PLASMO_PUBLIC_*` equivalents:
 
 ```bash
-export PLASMO_PUBLIC_AZURE_TRANSLATOR_KEY="$AZURE_TRANSLATOR_KEY"
-export PLASMO_PUBLIC_AZURE_TRANSLATOR_REGION="$AZURE_TRANSLATOR_REGION"
-export PLASMO_PUBLIC_DEEPL_API_KEY="$DEEPL_API_KEY"
-export PLASMO_PUBLIC_DEEPL_API_URL="$DEEPL_API_URL"
+export PLASMO_PUBLIC_LLM_API_KEY="$LLM_API_KEY"
+export PLASMO_PUBLIC_LLM_BASE_URL="$LLM_BASE_URL"
+export PLASMO_PUBLIC_LLM_MODEL="$LLM_MODEL"
 ```
 
 Provider strategy in MVP:
 
-- primary: Azure Translator (F0)
-- fallback: DeepL Free
+- protocol: OpenAI-compatible or Anthropic-compatible
+- routing: single configured provider (no automatic fallback)
 - target language default: `zh-CN`
+
+You can also configure provider settings in the extension popup:
+
+1. Open extension popup.
+2. Fill Provider Flavor / API Key / Base URL / Model.
+3. Keep `Enable troubleshooting logs` switched ON (default).
+4. Click `Save`.
+
+Troubleshooting panel in popup:
+
+- shows runtime logs from background and LLM provider adapters
+- includes request/response previews and per-request timing (`durationMs`)
+- supports `Refresh Logs` and `Clear Logs`
+
+Logs are stored in `chrome.storage.local` and can be toggled by the troubleshooting switch.
+
+Live provider check (uses `.env.local`):
+
+```bash
+npm run test:live
+```
+
+This runs one real translation request with your configured `LLM_*` values and prints masked config + latency/result.
+
+Popup settings are stored in `chrome.storage.local` and take precedence over environment variables.
+
+Base URL examples:
+
+- OpenAI-compatible: `https://api.openai.com`
+- Anthropic-compatible: `https://api.anthropic.com`
 
 ## Harness Scaffold
 
@@ -121,8 +150,8 @@ npm run test:e2e
 
 This test loads the extension from `build/chrome-mv3-prod` and verifies:
 
-- success path: select text -> loading -> Azure success
-- fallback path: Azure rate-limited -> DeepL success
-- failure path: both providers fail -> error UI + placeholder details
+- success path: select text -> loading -> OpenAI-compatible success
+- success path: select text -> loading -> Anthropic-compatible success
+- failure path: provider fails -> error UI + placeholder details
 
 Note: E2E uses internal mock modes on `example.com` to make provider behavior deterministic.
