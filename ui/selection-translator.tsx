@@ -19,6 +19,10 @@ const Z_INDEX = 2147483646
 const UI_LOG_PREFIX = "[translation:ui]"
 const BENCHMARK_REQUEST_CONCURRENCY = 4
 const FLASH_MODEL = "qwen-mt-flash"
+const CARD_FONT_STACK = "'Avenir Next', 'Segoe UI', 'Helvetica Neue', sans-serif"
+const DISPLAY_FONT_STACK = "'Iowan Old Style', 'Palatino Linotype', 'Book Antiqua', Georgia, serif"
+const ACCENT_GRADIENT = "linear-gradient(145deg, #ffb164 0%, #ff8d47 52%, #df6f2f 100%)"
+const ACCENT_SHADOW = "rgba(223,111,47,0.28)"
 
 const createTraceId = () =>
   `ui-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`
@@ -87,48 +91,80 @@ const markerStyle = (position: MarkerPosition) =>
     top: position.top,
     width: DOT_SIZE,
     height: DOT_SIZE,
-    borderRadius: "50%",
-    border: "none",
-    background: "#ef4f96",
-    boxShadow: "0 2px 10px rgba(239,79,150,0.35)",
+    alignItems: "center",
+    borderRadius: "36% 64% 58% 42% / 42% 42% 58% 58%",
+    border: "1px solid rgba(255,255,255,0.78)",
+    background:
+      `radial-gradient(circle at 24% 24%, rgba(255,255,255,0.96), rgba(255,255,255,0.26) 18%, transparent 19%), ${ACCENT_GRADIENT}`,
+    boxShadow: `0 12px 28px ${ACCENT_SHADOW}, 0 3px 8px rgba(34,24,41,0.14)`,
     cursor: "pointer",
+    display: "inline-flex",
+    justifyContent: "center",
+    overflow: "hidden",
+    padding: 0,
     zIndex: Z_INDEX
   }) as const
+
+const markerGlyphStyle = {
+  alignItems: "center",
+  display: "inline-flex",
+  gap: 2,
+  transform: "translate(0.5px, -0.5px)"
+} as const
+
+const markerGlyphStemStyle = {
+  background: "rgba(255,255,255,0.95)",
+  borderRadius: 999,
+  boxShadow: "0 1px 2px rgba(85,38,58,0.18)"
+} as const
 
 const cardContainerStyle = (position: MarkerPosition) =>
   ({
     position: "fixed",
-    width: 640,
+    width: 520,
     maxWidth: "calc(100vw - 24px)",
-    left: clamp(position.left - 260, 12, window.innerWidth - 652),
-    top: clamp(position.top + 24, 12, window.innerHeight - 540),
-    borderRadius: 22,
-    background: "rgba(247,247,248,0.98)",
-    border: "1px solid rgba(0,0,0,0.06)",
-    boxShadow: "0 20px 48px rgba(0,0,0,0.14)",
-    padding: "16px 18px 12px",
-    color: "#2c2d30",
+    left: clamp(position.left - 212, 12, window.innerWidth - 532),
+    top: clamp(position.top + 24, 12, window.innerHeight - 460),
+    borderRadius: 24,
+    background:
+      "linear-gradient(180deg, rgba(255,255,255,0.98) 0%, rgba(244,240,245,0.98) 100%)",
+    border: "1px solid rgba(110,96,122,0.12)",
+    boxShadow: "0 28px 80px rgba(34,24,41,0.16), 0 6px 22px rgba(34,24,41,0.08)",
+    padding: "18px 18px 16px",
+    color: "#2d2530",
+    fontFamily: CARD_FONT_STACK,
+    backdropFilter: "blur(18px)",
+    animation: "translationCardEnter 180ms cubic-bezier(0.2, 0.9, 0.25, 1)",
     zIndex: Z_INDEX
   }) as const
 
-const headerTagStyle = {
+const providerPillStyle = {
   display: "inline-flex",
   alignItems: "center",
   gap: 10,
-  background: "#ececef",
-  borderRadius: 12,
-  padding: "10px 14px",
-  fontSize: 22,
-  fontWeight: 500
+  background: "rgba(247,242,246,0.96)",
+  border: "1px solid rgba(108,90,114,0.12)",
+  borderRadius: 999,
+  padding: "8px 12px",
+  fontSize: 12,
+  fontWeight: 600,
+  letterSpacing: "0.01em",
+  color: "#4b3d50"
 } as const
 
-const iconButtonStyle = {
-  border: "none",
-  background: "transparent",
-  color: "#95979c",
-  fontSize: 24,
-  cursor: "default",
-  lineHeight: 1
+const closeButtonStyle = {
+  alignItems: "center",
+  background: "rgba(255,255,255,0.7)",
+  border: "1px solid rgba(90,76,99,0.12)",
+  borderRadius: 999,
+  color: "#6b5a71",
+  cursor: "pointer",
+  display: "inline-flex",
+  height: 30,
+  justifyContent: "center",
+  lineHeight: 1,
+  transition: "all 120ms ease",
+  width: 30
 } as const
 
 const requestRuntime = async (
@@ -544,10 +580,10 @@ const MainWorldSelectionTranslator = () => {
     <div
       data-testid={testId}
       style={{
-        height: 16,
-        borderRadius: 8,
+        height: 12,
+        borderRadius: 999,
         background:
-          "linear-gradient(90deg, rgba(220,220,225,0.95) 0%, rgba(245,245,248,0.95) 50%, rgba(220,220,225,0.95) 100%)",
+          "linear-gradient(90deg, rgba(224,219,226,0.88) 0%, rgba(248,245,249,0.98) 50%, rgba(224,219,226,0.88) 100%)",
         backgroundSize: "200% 100%",
         animation: "translationShimmer 1.2s ease-in-out infinite"
       }}
@@ -562,13 +598,18 @@ const MainWorldSelectionTranslator = () => {
         onClick={() => openCard("dot_click")}
         onMouseEnter={() => openCard("dot_hover")}
         ref={dotRef}
-        style={markerStyle(position)}
-      />
+        style={markerStyle(position)}>
+        <span aria-hidden="true" style={markerGlyphStyle}>
+          <span style={{ ...markerGlyphStemStyle, height: 9, transform: "rotate(18deg)", width: 3 }} />
+          <span style={{ ...markerGlyphStemStyle, height: 5, transform: "translateY(2px)", width: 5 }} />
+        </span>
+      </button>
 
       {showCard ? (
         <section data-testid="translation-card" ref={cardRef} style={cardContainerStyle(position)}>
           <style>
-            {`@keyframes translationShimmer{0%{background-position:100% 0}100%{background-position:-100% 0}}`}
+            {`@keyframes translationShimmer{0%{background-position:100% 0}100%{background-position:-100% 0}}
+            @keyframes translationCardEnter{0%{opacity:0;transform:translateY(8px) scale(0.985)}100%{opacity:1;transform:translateY(0) scale(1)}}`}
           </style>
           <header
             style={{
@@ -577,51 +618,97 @@ const MainWorldSelectionTranslator = () => {
               justifyContent: "space-between",
               marginBottom: 18
             }}>
-            <div style={headerTagStyle}>
+            <div style={providerPillStyle}>
               <span
                 style={{
                   alignItems: "center",
-                  background: "#ef4f96",
-                  borderRadius: 8,
+                  background: ACCENT_GRADIENT,
+                  borderRadius: 999,
                   color: "#fff",
                   display: "inline-flex",
-                  fontSize: 16,
+                  fontSize: 11,
                   fontWeight: 700,
-                  height: 30,
+                  height: 24,
                   justifyContent: "center",
-                  width: 30
+                  width: 24,
+                  boxShadow: `0 6px 14px ${ACCENT_SHADOW}`
                 }}>
-                A
+                翻
               </span>
-              <span>Free Translation Service</span>
+              <div style={{ display: "grid", gap: 2 }}>
+                <span style={{ color: "#6a5a70", fontSize: 10, letterSpacing: "0.08em", textTransform: "uppercase" }}>
+                  Quick Translate
+                </span>
+                <span style={{ color: "#342938", fontSize: 13 }}>Live Flash Card</span>
+              </div>
             </div>
-            <div style={{ alignItems: "center", display: "flex", gap: 8 }}>
-              <button style={iconButtonStyle}>⎘</button>
-              <button style={iconButtonStyle}>📌</button>
-              <button style={iconButtonStyle}>⋯</button>
+            <div style={{ alignItems: "center", display: "flex", gap: 10 }}>
+              <span
+                data-testid="translation-provider"
+                style={{
+                  background: "rgba(255,255,255,0.72)",
+                  border: "1px solid rgba(106,90,112,0.1)",
+                  borderRadius: 999,
+                  color: "#76667b",
+                  fontSize: 11,
+                  padding: "7px 10px"
+                }}>
+                Provider: {translationState?.status ? translationState.provider : "pending"} · Model: {FLASH_MODEL}
+              </span>
               <button
                 aria-label="Close translation card"
                 onClick={() => closeCard("close_button")}
-                style={{ ...iconButtonStyle, cursor: "pointer" }}>
-                ✕
+                style={closeButtonStyle}>
+                <span style={{ display: "inline-block", fontSize: 15, transform: "translateY(-1px)" }}>×</span>
               </button>
             </div>
           </header>
 
-          <div style={{ marginBottom: 20 }}>
-            <div style={{ alignItems: "baseline", display: "flex", gap: 14, marginBottom: 10 }}>
-              <strong style={{ fontSize: 50, fontWeight: 700, lineHeight: 1.12 }}>{data.source}</strong>
+          <div style={{ marginBottom: 18 }}>
+            <div style={{ marginBottom: 14 }}>
+              <p
+                style={{
+                  color: "#7d7082",
+                  fontSize: 11,
+                  letterSpacing: "0.08em",
+                  margin: "0 0 6px",
+                  textTransform: "uppercase"
+                }}>
+                Selected text
+              </p>
+              <strong
+                style={{
+                  display: "block",
+                  fontFamily: DISPLAY_FONT_STACK,
+                  fontSize: 34,
+                  fontWeight: 600,
+                  letterSpacing: "-0.02em",
+                  lineHeight: 1.1
+                }}>
+                {data.source}
+              </strong>
             </div>
             {translationState?.status === "loading" ? (
-              <div data-testid="translation-loading" style={{ display: "grid", gap: 10, marginTop: 4 }}>
+              <div
+                data-testid="translation-loading"
+                style={{
+                  display: "grid",
+                  gap: 10,
+                  marginTop: 4,
+                  padding: "16px 16px 14px",
+                  background: "rgba(247,243,247,0.92)",
+                  border: "1px solid rgba(111,96,121,0.08)",
+                  borderRadius: 20
+                }}>
                 {[0, 1, 2].map((item) => (
                   <div
                     key={item}
                     style={{
-                      height: 16,
-                      borderRadius: 8,
+                      height: item === 1 ? 14 : 12,
+                      width: item === 2 ? "88%" : item === 1 ? "68%" : "34%",
+                      borderRadius: 999,
                       background:
-                        "linear-gradient(90deg, rgba(220,220,225,0.95) 0%, rgba(245,245,248,0.95) 50%, rgba(220,220,225,0.95) 100%)",
+                        "linear-gradient(90deg, rgba(224,219,226,0.88) 0%, rgba(248,245,249,0.98) 50%, rgba(224,219,226,0.88) 100%)",
                       backgroundSize: "200% 100%",
                       animation: "translationShimmer 1.2s ease-in-out infinite"
                     }}
@@ -634,14 +721,30 @@ const MainWorldSelectionTranslator = () => {
                 <div
                   data-testid="translation-card-details"
                   style={{
-                    background: "#ececee",
-                    borderRadius: 18,
-                    padding: "18px 22px"
+                    background: "rgba(247,243,247,0.92)",
+                    border: "1px solid rgba(111,96,121,0.08)",
+                    borderRadius: 20,
+                    padding: "16px 16px 14px"
                   }}>
+                  <div
+                    style={{
+                      color: "#8a7d8f",
+                      fontSize: 10,
+                      letterSpacing: "0.08em",
+                      marginBottom: 10,
+                      textTransform: "uppercase"
+                    }}>
+                    Translation card
+                  </div>
                   {translatedCard?.phonetic ? (
                     <p
                       data-testid="translation-line-phonetic"
-                      style={{ color: "#5f6470", fontSize: 20, margin: "0 0 10px" }}>
+                      style={{
+                        color: "#736779",
+                        fontFamily: DISPLAY_FONT_STACK,
+                        fontSize: 18,
+                        margin: "0 0 10px"
+                      }}>
                       {displayedPhonetic}
                     </p>
                   ) : (
@@ -650,7 +753,13 @@ const MainWorldSelectionTranslator = () => {
                   {translatedCard?.meaning ? (
                     <p
                       data-testid="translation-line-meaning"
-                      style={{ color: "#2f3338", fontSize: 22, margin: "10px 0" }}>
+                      style={{
+                        color: "#2f2732",
+                        fontSize: 18,
+                        fontWeight: 600,
+                        lineHeight: 1.45,
+                        margin: "10px 0"
+                      }}>
                       {displayedMeaning}
                     </p>
                   ) : (
@@ -659,24 +768,38 @@ const MainWorldSelectionTranslator = () => {
                   {translatedCard?.example ? (
                     <p
                       data-testid="translation-line-example"
-                      style={{ color: "#4c5058", fontSize: 18, lineHeight: 1.5, margin: "10px 0 0" }}>
+                      style={{
+                        color: "#5c515f",
+                        fontSize: 15,
+                        lineHeight: 1.58,
+                        margin: "10px 0 0"
+                      }}>
                       {displayedExample}
                     </p>
                   ) : (
                     <div style={{ marginTop: 10 }}>{renderLinePlaceholder("translation-line-example-loading")}</div>
                   )}
                 </div>
-                <p data-testid="translation-provider" style={{ color: "#6b6f78", fontSize: 16, margin: "10px 0 0" }}>
-                  Provider: {translationState.provider} · Model: {FLASH_MODEL}
+                <p style={{ color: "#7b707f", fontSize: 11, margin: "10px 0 0" }}>
+                  Provider: {translationState.provider.replace("_", " ")} · Model: {FLASH_MODEL}
                 </p>
               </>
             ) : null}
             {translationState?.status === "error" ? (
               <>
-                <p data-testid="translation-error" style={{ color: "#b53a3a", fontSize: 20, margin: "0 0 10px" }}>
+                <p
+                  data-testid="translation-error"
+                  style={{
+                    color: "#a13c58",
+                    fontSize: 16,
+                    fontWeight: 600,
+                    margin: "0 0 8px"
+                  }}>
                   Translation unavailable ({translationState.provider}:{translationState.errorCode})
                 </p>
-                <p style={{ color: "#6b6f78", fontSize: 16, margin: 0 }}>{translationState.message}</p>
+                <p style={{ color: "#6f6475", fontSize: 13, lineHeight: 1.5, margin: 0 }}>
+                  {translationState.message}
+                </p>
               </>
             ) : null}
           </div>
@@ -685,19 +808,30 @@ const MainWorldSelectionTranslator = () => {
             <div
               data-testid="translation-placeholder"
               style={{
-                background: "#ececee",
-                borderRadius: 18,
-                padding: "18px 22px"
+                background: "rgba(247,243,247,0.92)",
+                border: "1px solid rgba(111,96,121,0.08)",
+                borderRadius: 20,
+                padding: "16px 16px 14px"
               }}>
-              <div style={{ alignItems: "center", display: "flex", gap: 12, marginBottom: 8 }}>
-                <strong style={{ fontSize: 48, fontWeight: 700, lineHeight: 1.2 }}>{data.detailTitle}</strong>
-                <button style={iconButtonStyle}>🔊</button>
-                <button style={iconButtonStyle}>⧉</button>
+              <div style={{ color: "#8a7d8f", fontSize: 10, letterSpacing: "0.08em", marginBottom: 10, textTransform: "uppercase" }}>
+                Detail preview
               </div>
-              <p style={{ color: "#353940", fontSize: 22, lineHeight: 1.5, margin: "0 0 8px" }}>
+              <div style={{ alignItems: "center", display: "flex", gap: 10, marginBottom: 8 }}>
+                <strong
+                  style={{
+                    color: "#2f2732",
+                    fontFamily: DISPLAY_FONT_STACK,
+                    fontSize: 28,
+                    fontWeight: 600,
+                    lineHeight: 1.2
+                  }}>
+                  {data.detailTitle}
+                </strong>
+              </div>
+              <p style={{ color: "#3c3240", fontSize: 16, lineHeight: 1.5, margin: "0 0 8px" }}>
                 Placeholder detail (dry-run)
               </p>
-              <p style={{ color: "#353940", fontSize: 22, lineHeight: 1.5, margin: 0 }}>{data.detailBody}</p>
+              <p style={{ color: "#5c515f", fontSize: 15, lineHeight: 1.58, margin: 0 }}>{data.detailBody}</p>
             </div>
           ) : null}
         </section>

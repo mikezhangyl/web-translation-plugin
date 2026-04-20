@@ -1,4 +1,4 @@
 # Current Session
 
 - Current session file: `codex/logs/session-002.md`
-- Next step number: `3`
+- Next step number: `8`

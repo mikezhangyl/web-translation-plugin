@@ -115,3 +115,131 @@ The user wants the current branch work published and merged. The correct flow is
 
 ### Result
 - In progress.
+
+## Step 4
+
+### User Instruction
+```text
+[Translated from Chinese] Implement the Translation Plugin UI Polish Plan.
+```
+
+### Understanding
+The user wants a visual polish pass over the floating translation card and popup settings UI only. The redesign should feel premium and calmer, reduce oversized typography, simplify controls, improve hierarchy, preserve existing behavior and selectors where practical, and avoid changing the translation/runtime contract.
+
+### Plan
+1. Create a small shared visual language for the overlay card and popup using inline style constants.
+2. Restyle the floating card with smaller typography, premium spacing, simplified header controls, and refined streaming/loading presentation.
+3. Restyle the popup with grouped sections, calmer forms, improved hierarchy, and subtle env-vs-saved affordances.
+4. Keep existing test selectors and rerun logic, mock E2E, build, and log validation.
+
+### Actions Taken
+- Updated `ui/selection-translator.tsx`:
+  - replaced the demo-like overlay with a calmer premium card surface.
+  - reduced typography scale across the card and improved spacing/hierarchy.
+  - simplified the header to a branded provider pill plus a real close control.
+  - refined loading and streaming placeholders into lighter skeleton lines.
+  - preserved the final content order: phonetic, meaning, example.
+  - preserved existing interaction behavior and test ids, including provider/model output.
+- Updated `popup.tsx`:
+  - redesigned the popup into grouped premium surfaces instead of a plain form stack.
+  - reduced text sizes and improved hierarchy between settings, diagnostics, and logs.
+  - upgraded form controls and action buttons while preserving current settings behavior.
+  - improved trace/log readability with better spacing, contrast, and section structure.
+
+### Validation
+- `npm run test:ui-logic`: PASS
+- `npm run build`: PASS
+- `rm -rf test-results && npm run test:e2e:mock`: PASS
+- `RUN_LIVE_E2E=1 npm run test:e2e -- tests/e2e/live-selection-flow.spec.ts`: PASS
+- `npm run check:logs`: PASS
+
+### Result
+- Success. The floating translation card and popup now share a more polished, premium visual language with smaller typography, lighter chrome, simplified controls, and improved streaming/log presentation, while keeping existing translation behavior intact.
+
+## Step 5
+
+### User Instruction
+```text
+[Translated from Chinese] Make a micro-adjustment. I have one more requirement: the dot in the lower-right corner looks good, but it looks too similar to existing products. Can we change it to a style that is unique to us?
+```
+
+### Understanding
+The user wants a small visual refinement to the floating trigger marker only. The existing glossy pink dot feels too derivative, so it should be replaced with a more distinctive house-style marker while preserving the same trigger behavior, placement, and test selectors.
+
+### Plan
+1. Update the active session log before editing the UI.
+2. Redesign the trigger marker in `ui/selection-translator.tsx` to use a more distinct silhouette and inner motif instead of the current generic glossy circle.
+3. Keep `translation-dot` interactions and test ids unchanged.
+4. Run targeted validation for UI logic, build, mock E2E, and log integrity.
+
+### Actions Taken
+- Updated `ui/selection-translator.tsx`:
+  - replaced the generic glossy dot with a branded pebble-shaped trigger.
+  - added a subtle internal two-part glyph so the marker reads as a unique product accent instead of a copy of common translation widgets.
+  - preserved the same `translation-dot` test id and click/hover trigger behavior.
+
+### Validation
+- `npm run test:ui-logic`: PASS
+- `npm run build`: PASS
+- `rm -rf test-results && npm run test:e2e:mock`: PASS
+- `npm run check:logs`: PASS
+
+### Result
+- Success. The floating trigger now uses a more distinct house-style marker with the same behavior and test hooks, while the card open flow, mock browser flow, build, and logging checks all remain green.
+
+## Step 6
+
+### User Instruction
+```text
+[Translated from Chinese] Very good. Now let's switch to a different color family. Do not use the pink family. Use a gold family, using the color family from the image.
+```
+
+### Understanding
+The user wants the current UI accent color system changed from pink to a gold/orange family matching the reference image. This should affect the visible accent surfaces in the translation card and popup while preserving behavior and layout.
+
+### Plan
+1. Record the request in the active session log before changing files.
+2. Replace the remaining pink accent styles in the floating trigger, card header badge, and popup primary action with a consistent gold/orange palette.
+3. Keep interaction behavior, selectors, and layout unchanged.
+4. Run targeted validation for UI logic, build, mock E2E, and log compliance.
+
+### Actions Taken
+- Updated `ui/selection-translator.tsx`:
+  - replaced the pink accent gradient on the floating trigger with a gold/orange accent based on the reference image.
+  - updated the card header badge to the same gold/orange accent so the marker and card feel like one product system.
+- Updated `popup.tsx`:
+  - changed the primary Save button accent from pink to the same gold/orange family for consistent popup branding.
+
+### Validation
+- `npm run test:ui-logic`: PASS
+- `npm run build`: PASS
+- `rm -rf test-results && npm run test:e2e:mock`: PASS
+- `npm run check:logs`: PASS
+
+### Result
+- Success. The UI accent system now uses a gold/orange palette instead of pink across the floating trigger, card badge, and popup primary action, while behavior and test coverage remain unchanged.
+
+## Step 7
+
+### User Instruction
+```text
+[Translated from Chinese] Now let's commit and merge. Next, we want to try translating sentences and paragraphs, and open a new branch.
+```
+
+### Understanding
+The user wants the current UI polish branch shipped and merged first. After that, local `main` should be updated and a fresh feature branch should be created for the next task focused on sentence and paragraph translation.
+
+### Plan
+1. Record the release request in the active session log before mutating repository state.
+2. Clean transient test artifacts, run the required `npm run check:local` gate, and verify the branch state.
+3. Commit and push the current feature branch, create or update a PR, and merge it.
+4. Sync local `main` and create a new feature branch for sentence/paragraph translation work.
+
+### Actions Taken
+- In progress.
+
+### Validation
+- In progress.
+
+### Result
+- In progress.
