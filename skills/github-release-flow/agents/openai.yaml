@@ -1,4 +1,4 @@
 interface:
   display_name: "GitHub Release Flow"
   short_description: "Use /ship to submit and /land to merge approved PRs."
-  default_prompt: "Use /ship for commit+push+draft-PR flow, and use /land to merge approved PRs (squash by default) with branch cleanup and local main sync."
+  default_prompt: "Use /ship for commit+push+draft-PR flow, and use /land to merge approved PRs (squash by default) with branch cleanup and local main sync. Delegate Git mutations to agents/git-operator.md by default."

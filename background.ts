@@ -173,6 +173,19 @@ const parseBenchmarkModels = (value: unknown) =>
     .map((item) => item.trim())
     .filter(Boolean)
 
+const isMockFlashCardRequest = (body: { model?: string; messages?: Array<{ content?: string }> }) => {
+  if (body.model !== "qwen-mt-flash" || !Array.isArray(body.messages) || typeof body.messages[0]?.content !== "string") {
+    return false
+  }
+
+  const content = body.messages[0].content
+  if (content.includes("Return strict JSON only")) {
+    return true
+  }
+
+  return content.trim().split(/\s+/).filter(Boolean).length <= 4
+}
+
 const e2eConfigForMode = (mode: NonNullable<TranslationMessage["payload"]["e2eMode"]>) => {
   if (mode === "anthropic_success") {
     return {
@@ -202,12 +215,19 @@ const getE2EDependencies = (mode: NonNullable<TranslationMessage["payload"]["e2e
       return new Response("mock provider unavailable", { status: 503 })
     }
 
-    const body = JSON.parse(String(init?.body ?? "{}")) as { model?: string }
+    const body = JSON.parse(String(init?.body ?? "{}")) as {
+      model?: string
+      messages?: Array<{ content?: string }>
+    }
     const flashCardPayload = JSON.stringify({
       phonetic: "/əbˈsɪdiən/",
       meaning: mode === "anthropic_success" ? "黑曜石（Anthropic）" : "黑曜石（OpenAI）",
       example: "Obsidian helps me organize my notes. — Obsidian 帮助我整理笔记。"
     })
+    const plainSentencePayload =
+      mode === "anthropic_success"
+        ? "这是一句用于 Anthropics 模拟测试的中文译文。"
+        : "这是一句用于 OpenAI 模拟测试的中文译文。"
 
     if (cfg.providerFlavor === "anthropic-compatible") {
       return new Response(
@@ -215,7 +235,11 @@ const getE2EDependencies = (mode: NonNullable<TranslationMessage["payload"]["e2e
           content: [
             {
               type: "text",
-              text: body.model === "qwen-mt-flash" ? flashCardPayload : "黑曜石（Anthropic）"
+              text: isMockFlashCardRequest(body)
+                ? flashCardPayload
+                : body.model === "qwen-mt-flash"
+                  ? plainSentencePayload
+                  : "黑曜石（Anthropic）"
             }
           ]
         }),
@@ -224,14 +248,18 @@ const getE2EDependencies = (mode: NonNullable<TranslationMessage["payload"]["e2e
     }
 
     return new Response(
-      JSON.stringify({
-        choices: [
-          {
-            message: {
-              content: body.model === "qwen-mt-flash" ? flashCardPayload : "黑曜石（OpenAI）"
+        JSON.stringify({
+          choices: [
+            {
+              message: {
+                content: isMockFlashCardRequest(body)
+                  ? flashCardPayload
+                  : body.model === "qwen-mt-flash"
+                    ? plainSentencePayload
+                    : "黑曜石（OpenAI）"
+              }
             }
-          }
-        ]
+          ]
       }),
       { status: 200, headers: { "Content-Type": "application/json" } }
     )

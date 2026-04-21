@@ -27,6 +27,25 @@ const openCard = async (page: Page) => {
   return card
 }
 
+const openSentenceCard = async (page: Page) => {
+  await page.locator("p").first().evaluate((element) => {
+    const range = document.createRange()
+    range.selectNodeContents(element)
+    const selection = window.getSelection()
+    selection?.removeAllRanges()
+    selection?.addRange(range)
+    document.dispatchEvent(new MouseEvent("mouseup", { bubbles: true }))
+  })
+
+  const dot = page.getByTestId("translation-dot")
+  await dot.waitFor({ state: "visible", timeout: 10_000 })
+  await dot.hover()
+
+  const card = page.getByTestId("translation-card")
+  await card.waitFor({ state: "visible", timeout: 5_000 })
+  return card
+}
+
 const attachScreenshot = async (
   page: Page,
   testInfo: TestInfo,
@@ -102,6 +121,20 @@ test("selection flow shows openai-compatible success", async ({}, testInfo) => {
   })
 })
 
+test("selection flow still shows marker when host page hides native buttons", async ({}) => {
+  await runWithExtension(async ({ page }) => {
+    await setE2EMode(page, "openai_success")
+    await page.addStyleTag({
+      content: "button { display: none !important; visibility: hidden !important; }"
+    })
+
+    const card = await openCard(page)
+    const dot = page.getByTestId("translation-dot")
+    await expect(dot).toBeVisible()
+    await expect(card).toBeVisible()
+  })
+})
+
 test("selection flow shows anthropic-compatible success", async ({}, testInfo) => {
   await runWithExtension(async ({ page }) => {
     await setE2EMode(page, "anthropic_success")
@@ -111,6 +144,17 @@ test("selection flow shows anthropic-compatible success", async ({}, testInfo) =
     await expect(card.getByTestId("translation-line-example")).toContainText("Obsidian helps me organize my notes.")
     await expect(card.getByTestId("translation-provider")).toContainText("Provider: anthropic_compatible")
     await attachScreenshot(page, testInfo, "e2e-anthropic-success")
+  })
+})
+
+test("selection flow shows sentence translation without phonetic or example", async ({}, testInfo) => {
+  await runWithExtension(async ({ page }) => {
+    await setE2EMode(page, "openai_success")
+    const card = await openSentenceCard(page)
+    await expect(card.getByTestId("translation-line-meaning")).toHaveText("这是一句用于 OpenAI 模拟测试的中文译文。")
+    await expect(card.getByTestId("translation-line-phonetic")).toHaveCount(0)
+    await expect(card.getByTestId("translation-line-example")).toHaveCount(0)
+    await attachScreenshot(page, testInfo, "e2e-openai-sentence-success")
   })
 })
 

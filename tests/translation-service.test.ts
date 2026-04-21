@@ -222,3 +222,45 @@ test("translateText returns structured flash card fields for qwen-mt-flash", asy
   assert.match(String(result.data.card?.example), /performance improved this quarter/i)
   assert.match(result.data.translatedText, /表现；绩效/)
 })
+
+test("translateText returns plain sentence translation for qwen-mt-flash sentence input", async () => {
+  let capturedBody: Record<string, unknown> | null = null
+
+  const fetchMock: typeof fetch = async (_input, init) => {
+    capturedBody = JSON.parse(String(init?.body ?? "{}")) as Record<string, unknown>
+    return jsonResponse(200, {
+      choices: [{ message: { content: "这是一句完整的中文译文。" } }]
+    })
+  }
+
+  const result = await translateText(
+    {
+      text: "Obsidian Web Clipper is a fast and clean way to save notes.",
+      targetLang: "zh-CN"
+    },
+    {
+      env: {
+        LLM_PROVIDER_FLAVOR: "openai-compatible",
+        LLM_API_KEY: "qwen-key",
+        LLM_BASE_URL: "https://dashscope.aliyuncs.com/compatible-mode",
+        LLM_MODEL: "qwen-mt-flash"
+      },
+      fetchImpl: fetchMock
+    }
+  )
+
+  assert.equal(result.ok, true)
+  if (!result.ok) return
+
+  const body = capturedBody as {
+    messages?: Array<{ role?: string; content?: string }>
+    translation_options?: { source_lang?: string; target_lang?: string }
+  }
+  assert.ok(body.translation_options)
+  assert.equal(body.translation_options?.source_lang, "auto")
+  assert.equal(body.translation_options?.target_lang, "Chinese")
+  assert.equal(Array.isArray(body.messages), true)
+  assert.equal(String(body.messages?.[0]?.content), "Obsidian Web Clipper is a fast and clean way to save notes.")
+  assert.equal(result.data.card, undefined)
+  assert.equal(result.data.translatedText, "这是一句完整的中文译文。")
+})

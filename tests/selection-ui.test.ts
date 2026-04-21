@@ -5,7 +5,8 @@ import {
   buildDryRunTranslation,
   clamp,
   computeMarkerPositionFromRect,
-  isLikelyWord
+  isFlashCardSelection,
+  isSupportedSelection
 } from "../lib/selection-ui"
 
 test("clamp keeps value in range", () => {
@@ -14,12 +15,14 @@ test("clamp keeps value in range", () => {
   assert.equal(clamp(99, 0, 10), 10)
 })
 
-test("isLikelyWord accepts short selections and rejects oversized text", () => {
-  assert.equal(isLikelyWord("Obsidian"), true)
-  assert.equal(isLikelyWord(""), false)
-  assert.equal(isLikelyWord("one two three four"), true)
-  assert.equal(isLikelyWord("one two three four five"), false)
-  assert.equal(isLikelyWord("x".repeat(49)), false)
+test("selection classification distinguishes flash-card text from sentence text", () => {
+  assert.equal(isFlashCardSelection("Obsidian"), true)
+  assert.equal(isFlashCardSelection("one two three four"), true)
+  assert.equal(isFlashCardSelection("one two three four five"), false)
+  assert.equal(isFlashCardSelection("x".repeat(49)), false)
+  assert.equal(isSupportedSelection("This is a full sentence that should still be translated."), true)
+  assert.equal(isSupportedSelection(""), false)
+  assert.equal(isSupportedSelection("x".repeat(361)), false)
 })
 
 test("computeMarkerPositionFromRect returns null for empty rect", () => {

@@ -33,14 +33,14 @@ const pick = (...keys) => {
 const runtimeEnv = { ...process.env, RUN_LIVE_E2E: "1" }
 
 const mappings = [
-  ["LLM_PROVIDER_FLAVOR", "PLASMO_PUBLIC_LLM_PROVIDER_FLAVOR"],
-  ["LLM_API_KEY", "PLASMO_PUBLIC_LLM_API_KEY"],
-  ["LLM_BASE_URL", "PLASMO_PUBLIC_LLM_BASE_URL"],
-  ["LLM_MODEL", "PLASMO_PUBLIC_LLM_MODEL"]
+  [["QWEN_PROVIDER_FLAVOR", "LLM_PROVIDER_FLAVOR"], "PLASMO_PUBLIC_LLM_PROVIDER_FLAVOR"],
+  [["QWEN_API_KEY", "LLM_API_KEY"], "PLASMO_PUBLIC_LLM_API_KEY"],
+  [["QWEN_BASE_URL", "LLM_BASE_URL"], "PLASMO_PUBLIC_LLM_BASE_URL"],
+  [["QWEN_MODEL", "LLM_MODEL"], "PLASMO_PUBLIC_LLM_MODEL"]
 ]
 
-for (const [privateKey, publicKey] of mappings) {
-  runtimeEnv[publicKey] = pick(publicKey, privateKey)
+for (const [privateKeys, publicKey] of mappings) {
+  runtimeEnv[publicKey] = pick(publicKey, ...privateKeys)
 }
 
 const requiredPublicKeys = [

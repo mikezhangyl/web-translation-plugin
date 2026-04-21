@@ -64,6 +64,44 @@ const buttonStyle = {
   cursor: "pointer"
 } as const
 
+const iconButtonStyle = {
+  alignItems: "center",
+  background: "rgba(255,255,255,0.82)",
+  border: "1px solid rgba(111,95,121,0.12)",
+  borderRadius: 12,
+  color: "#5d5362",
+  cursor: "pointer",
+  display: "inline-flex",
+  height: 32,
+  justifyContent: "center",
+  width: 32
+} as const
+
+const copyTextToClipboard = async (value: string) => {
+  if (typeof navigator !== "undefined" && navigator.clipboard?.writeText) {
+    await navigator.clipboard.writeText(value)
+    return
+  }
+
+  if (typeof document === "undefined") {
+    throw new Error("Clipboard is unavailable.")
+  }
+
+  const textarea = document.createElement("textarea")
+  textarea.value = value
+  textarea.setAttribute("readonly", "")
+  textarea.style.position = "fixed"
+  textarea.style.opacity = "0"
+  document.body.appendChild(textarea)
+  textarea.select()
+  const copied = document.execCommand("copy")
+  document.body.removeChild(textarea)
+
+  if (!copied) {
+    throw new Error("Copy command failed.")
+  }
+}
+
 type TracePhase = {
   ts: string
   event: string
@@ -71,11 +109,16 @@ type TracePhase = {
   model: string
 }
 
+type CopyState = "idle" | "copying" | "copied" | "error"
+type ClearState = "idle" | "clearing" | "cleared" | "error"
+
 function IndexPopup() {
   const [settings, setSettings] = useState<TranslationSettings>(EMPTY_TRANSLATION_SETTINGS)
   const [logs, setLogs] = useState<TranslationDebugLogEntry[]>([])
   const [status, setStatus] = useState("")
   const [loading, setLoading] = useState(true)
+  const [copyState, setCopyState] = useState<CopyState>("idle")
+  const [clearState, setClearState] = useState<ClearState>("idle")
 
   const readEnvDefaults = async (
     profileId: TranslationProfileId,
@@ -206,6 +249,30 @@ function IndexPopup() {
     }, 1500)
     return () => clearInterval(timer)
   }, [])
+
+  useEffect(() => {
+    if (copyState !== "copied" && copyState !== "error") {
+      return
+    }
+
+    const timeout = window.setTimeout(() => {
+      setCopyState("idle")
+    }, 1800)
+
+    return () => window.clearTimeout(timeout)
+  }, [copyState])
+
+  useEffect(() => {
+    if (clearState !== "cleared" && clearState !== "error") {
+      return
+    }
+
+    const timeout = window.setTimeout(() => {
+      setClearState("idle")
+    }, 1800)
+
+    return () => window.clearTimeout(timeout)
+  }, [clearState])
 
   const updateField = <K extends keyof TranslationSettings>(key: K, value: TranslationSettings[K]) => {
     setSettings((prev) => withFlavorDefaults({ ...prev, [key]: value }))
@@ -357,6 +424,98 @@ function IndexPopup() {
       model
     }
   })
+  const llmLogText =
+    llmLogs.length === 0
+      ? "No troubleshooting logs recorded yet."
+      : llmLogs
+          .map((log) => {
+            const payload = log.payload ?? {}
+            const provider = String(payload.provider ?? "-")
+            const status = String(payload.status ?? "-")
+            const durationMs = String(payload.durationMs ?? "-")
+            const ttfbMs = String(payload.ttfbMs ?? "-")
+            const requestUrl = String(payload.requestUrl ?? "-")
+            const model = String(payload.model ?? "-")
+            const translatedPreview = String(payload.translatedPreview ?? payload.responseTextPreview ?? "-")
+            const message = String(payload.message ?? payload.bodyPreview ?? "-")
+            return [
+              `[${log.ts}] ${log.level.toUpperCase()} ${log.event}`,
+              `provider=${provider} status=${status} durationMs=${durationMs} ttfbMs=${ttfbMs}`,
+              `model=${model}`,
+              `requestUrl=${requestUrl}`,
+              `translatedPreview=${translatedPreview}`,
+              `message=${message}`
+            ].join("\n")
+          })
+          .join("\n\n")
+  const copyButtonLabel =
+    copyState === "copying"
+      ? "Copying logs"
+      : copyState === "copied"
+        ? "Logs copied"
+        : copyState === "error"
+          ? "Copy failed"
+          : "Copy logs"
+  const copyButtonStyle = {
+    ...iconButtonStyle,
+    background:
+      copyState === "copied"
+        ? "rgba(255, 177, 100, 0.18)"
+        : copyState === "error"
+          ? "rgba(184, 88, 88, 0.12)"
+          : "rgba(255,255,255,0.82)",
+    borderColor:
+      copyState === "copied"
+        ? "rgba(223, 111, 47, 0.34)"
+        : copyState === "error"
+          ? "rgba(184, 88, 88, 0.22)"
+          : "rgba(111,95,121,0.12)",
+    boxShadow:
+      copyState === "copied"
+        ? `0 8px 20px ${POPUP_ACCENT_SHADOW}`
+        : "none",
+    color:
+      copyState === "copied"
+        ? "#8a4b22"
+        : copyState === "error"
+          ? "#9d4a4a"
+          : "#5d5362",
+    transition: "all 140ms ease"
+  } as const
+  const clearButtonLabel =
+    clearState === "clearing"
+      ? "Clearing logs"
+      : clearState === "cleared"
+        ? "Logs cleared"
+        : clearState === "error"
+          ? "Clear failed"
+          : "Clear logs"
+  const clearButtonStyle = {
+    ...iconButtonStyle,
+    background:
+      clearState === "cleared"
+        ? "rgba(255, 177, 100, 0.18)"
+        : clearState === "error"
+          ? "rgba(184, 88, 88, 0.12)"
+          : "rgba(255,255,255,0.82)",
+    borderColor:
+      clearState === "cleared"
+        ? "rgba(223, 111, 47, 0.34)"
+        : clearState === "error"
+          ? "rgba(184, 88, 88, 0.22)"
+          : "rgba(111,95,121,0.12)",
+    boxShadow:
+      clearState === "cleared"
+        ? `0 8px 20px ${POPUP_ACCENT_SHADOW}`
+        : "none",
+    color:
+      clearState === "cleared"
+        ? "#8a4b22"
+        : clearState === "error"
+          ? "#9d4a4a"
+          : "#5d5362",
+    transition: "all 140ms ease"
+  } as const
 
   return (
     <div
@@ -605,7 +764,128 @@ function IndexPopup() {
       </section>
 
       <section style={{ ...popSurface, padding: 16 }}>
-        <h3 style={{ fontSize: 14, margin: "0 0 6px", color: "#2f2732" }}>Pipeline & LLM Logs</h3>
+        <div style={{ alignItems: "center", display: "flex", justifyContent: "space-between", gap: 10, marginBottom: 6 }}>
+          <h3 style={{ fontSize: 14, margin: 0, color: "#2f2732" }}>Pipeline & LLM Logs</h3>
+          <div style={{ display: "inline-flex", gap: 8 }}>
+            <button
+              aria-label={clearButtonLabel}
+              data-testid="clear-troubleshooting-logs"
+              onClick={() => {
+                if (clearState === "clearing") {
+                  return
+                }
+                setClearState("clearing")
+                clearLogs()
+                  .then(() => {
+                    setClearState("cleared")
+                  })
+                  .catch((error) => {
+                    setClearState("error")
+                    setStatus(error instanceof Error ? error.message : "Failed to clear logs.")
+                  })
+              }}
+              style={clearButtonStyle}
+              title={clearButtonLabel}
+              type="button">
+              {clearState === "cleared" ? (
+                <svg aria-hidden="true" height="14" viewBox="0 0 14 14" width="14">
+                  <path
+                    d="M2.5 7.3 5.4 10l6.1-6.4"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth="1.6"
+                  />
+                </svg>
+              ) : clearState === "error" ? (
+                <svg aria-hidden="true" height="14" viewBox="0 0 14 14" width="14">
+                  <path
+                    d="M4 4l6 6M10 4 4 10"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeLinecap="round"
+                    strokeWidth="1.5"
+                  />
+                </svg>
+              ) : (
+                <svg aria-hidden="true" height="14" viewBox="0 0 14 14" width="14">
+                  <path
+                    d="M3.5 4.5h7"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeLinecap="round"
+                    strokeWidth="1.2"
+                  />
+                  <path
+                    d="M5 4.5V3.6c0-.55.45-1 1-1h2c.55 0 1 .45 1 1v.9"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeLinecap="round"
+                    strokeWidth="1.2"
+                  />
+                  <path
+                    d="M4.5 4.5l.5 6.2c.04.42.39.73.81.73h2.4c.42 0 .77-.31.81-.73l.5-6.2"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth="1.2"
+                  />
+                </svg>
+              )}
+            </button>
+            <button
+              aria-label={copyButtonLabel}
+              data-testid="copy-troubleshooting-logs"
+              onClick={() => {
+                if (copyState === "copying") {
+                  return
+                }
+                setCopyState("copying")
+                copyTextToClipboard(llmLogText)
+                  .then(() => {
+                    setCopyState("copied")
+                    setStatus("Logs copied.")
+                  })
+                  .catch((error) => {
+                    setCopyState("error")
+                    setStatus(error instanceof Error ? error.message : "Failed to copy logs.")
+                  })
+              }}
+              style={copyButtonStyle}
+              title={copyButtonLabel}
+              type="button">
+              {copyState === "copied" ? (
+                <svg aria-hidden="true" height="14" viewBox="0 0 14 14" width="14">
+                  <path
+                    d="M2.5 7.3 5.4 10l6.1-6.4"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth="1.6"
+                  />
+                </svg>
+              ) : copyState === "error" ? (
+                <svg aria-hidden="true" height="14" viewBox="0 0 14 14" width="14">
+                  <path
+                    d="M4 4l6 6M10 4 4 10"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeLinecap="round"
+                    strokeWidth="1.5"
+                  />
+                </svg>
+              ) : (
+                <svg aria-hidden="true" height="14" viewBox="0 0 14 14" width="14">
+                  <rect fill="none" height="8" rx="1.5" stroke="currentColor" strokeWidth="1.2" width="8" x="4" y="2.5" />
+                  <rect fill="none" height="8" rx="1.5" stroke="currentColor" strokeWidth="1.2" width="8" x="2" y="4.5" />
+                </svg>
+              )}
+            </button>
+          </div>
+        </div>
         <p style={{ color: "#665b6c", fontSize: 11, lineHeight: 1.45, margin: "0 0 10px" }}>
           Latest trace phases plus raw provider/UI events with timing and previews.
         </p>
@@ -649,29 +929,7 @@ function IndexPopup() {
             padding: 12,
             whiteSpace: "pre-wrap"
           }}>
-          {llmLogs.length === 0
-            ? "No troubleshooting logs recorded yet."
-            : llmLogs
-                .map((log) => {
-                  const payload = log.payload ?? {}
-                  const provider = String(payload.provider ?? "-")
-                  const status = String(payload.status ?? "-")
-                  const durationMs = String(payload.durationMs ?? "-")
-                  const ttfbMs = String(payload.ttfbMs ?? "-")
-                  const requestUrl = String(payload.requestUrl ?? "-")
-                  const model = String(payload.model ?? "-")
-                  const translatedPreview = String(payload.translatedPreview ?? payload.responseTextPreview ?? "-")
-                  const message = String(payload.message ?? payload.bodyPreview ?? "-")
-                  return [
-                    `[${log.ts}] ${log.level.toUpperCase()} ${log.event}`,
-                    `provider=${provider} status=${status} durationMs=${durationMs} ttfbMs=${ttfbMs}`,
-                    `model=${model}`,
-                    `requestUrl=${requestUrl}`,
-                    `translatedPreview=${translatedPreview}`,
-                    `message=${message}`
-                  ].join("\n")
-                })
-                .join("\n\n")}
+          {llmLogText}
         </div>
       </section>
 

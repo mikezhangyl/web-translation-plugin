@@ -7,6 +7,7 @@ description: Standardize branch-based GitHub delivery for this repository. Use w
 
 Run a safe, repeatable workflow before any commit/push/PR action.
 Keep changes focused, avoid direct work on `main`, and produce a concise handoff summary.
+All Git mutations in this workflow MUST be delegated to `agents/git-operator.md` by default.
 
 ## Trigger Phrase
 
@@ -50,14 +51,17 @@ If user sends natural language such as "submit this change" or "merge this PR":
 
 1. Clarify one-sentence task intent.
 2. Determine whether to create a new branch.
-3. Propose branch name from task intent.
-4. Run preflight checks.
-5. Commit only scoped files.
-6. Push the current branch.
-7. Create draft PR by default.
-8. Prepare PR handoff summary.
+3. Delegate Git execution to `agents/git-operator.md`.
+4. Propose branch name from task intent.
+5. Run preflight checks.
+6. Commit only scoped files.
+7. Push the current branch.
+8. Create draft PR by default.
+9. Prepare PR handoff summary.
 
 ## Landing Workflow (`/land`)
+
+All Git mutations below MUST be executed by `git-operator` unless degraded fallback is explicitly authorized.
 
 1. Resolve target PR:
    - Prefer PR associated with current branch.
@@ -134,6 +138,11 @@ npm run check:local
 If any check fails:
 - Stop the flow.
 - Report the failure and actionable fix.
+
+If `git-operator` cannot be started or cannot complete the workflow:
+- Stop before any main-thread Git mutation.
+- Request explicit degraded fallback authorization.
+- If authorized, display `DEGRADED MODE` with the failure reason before continuing.
 
 ## 5) Commit Scope Control
 
