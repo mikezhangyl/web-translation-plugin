@@ -94,6 +94,13 @@ Repository-level rules for engineering execution agents.
 5. Test naming policy:
    - `test:e2e` should point to live E2E behavior.
    - mock browser flows must use explicit mock naming (for example `test:e2e:mock`).
+6. Git workflow delegation policy:
+   - All repository Git operations MUST run through the dedicated `git-operator` sub-agent by default.
+   - This includes branch creation, branch switching, commit, push, PR creation, PR state changes, merge, and local `main` sync.
+   - `/ship` and `/land` MUST delegate Git execution to `agents/git-operator.md`.
+   - Main-thread Git execution is fallback-only.
+   - If Git sub-agent startup or execution fails, request explicit fallback authorization before continuing.
+   - After authorization, main-agent fallback is allowed but MUST display a clear `DEGRADED MODE` warning that includes the failure reason.
 
 ## 6) Sub-Agent Role Defaults
 
@@ -101,6 +108,7 @@ Repository-level rules for engineering execution agents.
    - local test execution
    - change review
    - provider/API documentation research
+   - Git workflow execution
 2. Keep the main thread concise:
    - only high-signal pass/fail summary
    - actionable blocker details
@@ -110,6 +118,7 @@ Repository-level rules for engineering execution agents.
    - `code-reviewer`: quality/risk review only
    - `build-error-resolver`: build/type error fixes only, minimal diffs
    - `docs-researcher`: official-doc lookup and source-backed integration constraints only
+   - `git-operator`: branch/commit/push/PR/merge/sync workflow only
 4. `/test` execution policy:
    - `/test` must run through `test-runner` sub-agent.
    - Main thread should not execute test commands directly by default.
@@ -118,6 +127,11 @@ Repository-level rules for engineering execution agents.
 5. Model default for repository agent templates:
    - use `gpt-5.3-codex` unless a specific step explicitly requires another model.
    - do not use Claude-specific model labels (for example `sonnet`, `opus`) in this repository's agent templates.
+
+6. Git execution policy:
+   - `/ship` must run through `git-operator` by default.
+   - `/land` must run through `git-operator` by default.
+   - The main thread may summarize Git outcomes, but should not perform Git mutations directly unless degraded fallback is explicitly authorized.
 
 ## 7) Skill/Agent Adoption Gate
 

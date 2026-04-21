@@ -89,6 +89,8 @@ const resolveAnthropicBaseUrl = (candidate: string) => candidate || DEFAULT_ANTH
 const trimTrailingSlash = (value: string) => value.replace(/\/+$/, "")
 const isQwenMtModel = (model: string) => /^qwen-mt-/i.test(model.trim())
 const isFlashCardModel = (model: string) => model.trim().toLowerCase() === FLASH_CARD_MODEL
+const shouldUseFlashCardMode = (model: string, text: string) =>
+  isFlashCardModel(model) && text.trim().length > 0 && text.trim().length <= 48 && text.trim().split(/\s+/).filter(Boolean).length <= 4
 const toQwenMtLang = (lang: string) => {
   const normalized = lang.trim().toLowerCase()
   if (normalized === "zh-cn" || normalized === "zh" || normalized === "zh-hans") {
@@ -287,7 +289,7 @@ const translateWithOpenAICompatible = async (
   let ttfbMs = 0
   try {
     const qwenMtMode = isQwenMtModel(config.model)
-    const flashCardMode = isFlashCardModel(config.model)
+    const flashCardMode = shouldUseFlashCardMode(config.model, request.text)
     const userOnlyPrompt = request.sourceLang
       ? `Translate the following text from ${request.sourceLang} to ${request.targetLang}.\nText:\n${request.text}`
       : `Translate the following text to ${request.targetLang}.\nText:\n${request.text}`
@@ -382,7 +384,7 @@ const translateWithOpenAICompatible = async (
     ttfbMs,
     responseTextPreview: previewText(translatedText)
   })
-  if (isFlashCardModel(config.model)) {
+  if (shouldUseFlashCardMode(config.model, request.text)) {
     const card = parseFlashCard(translatedText)
     if (card) {
       const normalizedText = [card.phonetic, card.meaning, card.example].filter(Boolean).join("\n")
@@ -402,6 +404,7 @@ const streamWithOpenAICompatible = async (
   debugHook?: (event: TranslationDebugEvent) => void
 ): Promise<TranslateResponse> => {
   const provider: TranslationProvider = "openai_compatible"
+  const flashCardMode = shouldUseFlashCardMode(config.model, request.text)
   if (!config.apiKey) {
     throw toProviderError(provider, "MISSING_API_KEY", "Missing LLM_API_KEY")
   }
@@ -414,6 +417,9 @@ const streamWithOpenAICompatible = async (
 
   const url = `${trimTrailingSlash(config.baseUrl)}/v1/chat/completions`
   const startedAt = Date.now()
+  if (!flashCardMode) {
+    return translateWithOpenAICompatible(request, config, fetchImpl, timeoutMs, debugHook)
+  }
   debugHook?.({
     provider,
     stage: "request_start",
@@ -670,7 +676,7 @@ const translateWithAnthropicCompatible = async (
     ttfbMs,
     responseTextPreview: previewText(translatedText)
   })
-  if (isFlashCardModel(config.model)) {
+  if (shouldUseFlashCardMode(config.model, request.text)) {
     const card = parseFlashCard(translatedText)
     if (card) {
       const normalizedText = [card.phonetic, card.meaning, card.example].filter(Boolean).join("\n")

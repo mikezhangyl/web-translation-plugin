@@ -37,6 +37,7 @@ Natural language fallback is supported:
 
 ## What the Skill Does
 
+- Delegate `/ship` and `/land` Git mutations to the dedicated `git-operator` sub-agent by default.
 - Decide whether to create a new branch or reuse the current branch.
 - Suggest a normalized branch name.
 - Run preflight checks before commit/push (`npm run check:local`).

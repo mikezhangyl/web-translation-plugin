@@ -9,3 +9,4 @@ Use `github-release-flow` skill as the canonical implementation.
 - Resolve PR from current branch when possible.
 - Merge approved PR (squash by default).
 - Sync local `main` after merge.
+- Delegate Git mutations to `agents/git-operator.md`.
