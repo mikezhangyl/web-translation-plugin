@@ -1,4 +1,0 @@
-interface:
-  display_name: "Verify Flow"
-  short_description: "Use /verify to run local release checks in fixed order."
-  default_prompt: "Run /verify with check:local -> build -> package, summarize pass/fail/skipped per step, and return READY/NOT READY."

@@ -1,4 +1,0 @@
-interface:
-  display_name: "Plan Flow"
-  short_description: "Use /plan for concise, decision-ready implementation planning."
-  default_prompt: "Generate a four-section plan: Goal, Scope, Acceptance Criteria, Risks."

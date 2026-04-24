@@ -1,161 +1,82 @@
 # AGENTS
 
-Repository-level rules for engineering execution agents.
+Repository-specific operating guide for `web-translation-plugin`.
 
-## 1) Non-Negotiable Logging Rules
+## Start Here
 
-1. Only file-changing instructions MUST be recorded in session logs.
-   - Record when the request edits files, creates/deletes files, or otherwise changes repository state.
-   - Do not record when the request is only explanation, clarification, Q&A, or usage guidance with no repository mutation.
-2. For file-changing instructions, logging is mandatory before or during execution.
-3. No step can skip logging.
-4. Persisted log content in this repository MUST be in English.
-5. If the user instruction is not in English, record a faithful English translation and mark it as translated.
-6. Small-step execution only. Large, uncontrolled changes are not allowed.
-7. Explicit non-logging cases:
-   - Pure explanation questions (for example, "what does this mean?")
-   - Tool or skill usage guidance with no repository mutation
-   - General Q&A and command questions that do not change files
-8. Session rollover rule:
-   - When a session file exceeds 100 steps, create the next file using zero-padded sequence naming:
-     - `session-001.md` -> `session-002.md` -> `session-003.md`
-   - Start each new session file at `Step 1`.
-   - Update `codex/current-session.md` to point to the new active session file.
-9. Branch-scoped session changes:
-   - Session file changes created during active work stay on the active feature branch.
-   - Do not force-move session changes to unrelated branches.
-   - Session files are merged through the same PR as the work they describe.
+1. Read this file first.
+2. Use `docs/index.md` as the entrypoint into the durable docs system.
+3. Use `codex/` for session continuity and work logs.
+4. Treat `.codex/` as the project-local Codex control layer.
+5. Rely on the globally installed ECC skills for generic workflows; keep this file focused on repo facts only.
 
-## 2) Behavioral Rules (Execution Quality)
+## Repository Map
 
-1. Think before coding.
-   State assumptions explicitly. Surface ambiguity instead of guessing silently.
-2. Simplicity first.
-   Implement only what was requested. Avoid speculative abstraction and unnecessary configurability.
-3. Surgical changes.
-   Touch only code required by the request. Do not refactor unrelated areas.
-4. Goal-driven execution.
-   Define verifiable success criteria, execute, then validate with concrete checks.
-5. Autonomous failure handling and retry loop.
-   - If a task is not complete due to failing checks/tests/integration errors, do not interrupt the user with interim failure-only updates.
-   - Perform direct diagnosis and remediation, then retry.
-   - Minimum retry attempts per failure cycle: 3.
-   - Each retry must be informed by the previous attempt's evidence (logs, traces, errors), not blind reruns.
-   - Report back when:
-     - the task succeeds, or
-     - the retry budget is exhausted (more than 3 attempts) with concise evidence and next best action.
+- Stack: Plasmo + React + TypeScript + Manifest V3.
+- Runtime:
+  - `background.ts`
+  - `popup.tsx`
+  - `contents/selection-translator.tsx`
+  - `ui/selection-translator.tsx`
+  - `lib/`
+- Verification:
+  - `tests/`
+  - `playwright.config.mjs`
+  - `scripts/check-live-gate.mjs`
+  - `scripts/run-live-e2e.mjs`
+- Durable docs:
+  - `docs/index.md`
+- Repo-local Codex surfaces:
+  - `.codex/config.toml`
+  - `.codex/AGENTS.md`
+  - `.codex/agents/*.toml`
+- Session memory:
+  - `codex/current-session.md`
+  - `codex/log-template.md`
+  - `codex/logs/`
 
-## 3) Instruction Precedence and Conflict Resolution
+## Product Guardrails
 
-1. Conflict precedence order:
-   - explicit user instruction in current turn
-   - this `AGENTS.md`
-   - skill-level defaults/templates
-2. If `AGENTS.md` and a skill conflict, follow `AGENTS.md`.
-3. If current-turn user instruction conflicts with a default rule in this file, follow the user instruction and document the override in the session log.
+- Word and short-phrase selections use flash-card mode.
+- Sentence selections use plain translation mode with no phonetic or example fields.
+- Paragraph translation remains exploratory and is not a stable acceptance path yet.
+- Popup-visible provider settings may show env-derived defaults when storage is empty.
+- Real runtime translation requests must use stored settings only; do not reintroduce hidden env fallback in request execution.
+- Troubleshooting logs are part of the product, not optional debugging noise.
 
-## 4) Project Operations (This Repository)
+## Working Rules
 
-1. Stack baseline: Plasmo + React + TypeScript + Manifest V3.
-2. Standard commands:
-   - `npm install`
-   - `npm run dev`
-   - `npm run build`
-   - `npm run package`
-3. Do not add dependencies unless strictly required by the current step.
-4. Do not implement unrelated business logic outside the current requested scope.
-5. Branch-first execution rule:
-   - Before any file-changing work, create/switch to a feature branch.
-   - Do not start implementation on `main`.
-   - Allowed work on `main` is read-only exploration plus branch/PR hygiene (`checkout`, `pull`, merge sync).
-6. Branch reuse rule:
-   - Reuse the current feature branch while the same in-progress task is not merged.
-   - Create a new feature branch when starting a distinct new task or after the previous task is merged.
-7. LLM onboarding gate (mandatory for new providers/models):
-   - For first-time connection to a new LLM provider/model family without prior successful run evidence in this repository:
-     - query official provider documentation first
-     - documentation query work MUST be executed by a sub-agent
-     - use `agents/docs-researcher.md` as the default documentation-query role template
-   - Before any UI/E2E/provider-integration test, run per-model curl connectivity checks.
-   - If any curl connectivity check fails, STOP downstream LLM integration/E2E tests and report error evidence.
-   - Only continue LLM integration/E2E tests after curl connectivity passes.
-8. Acceptance standard taxonomy (mandatory):
-   - `E2E` means real user-flow + real provider/network connectivity + real response validation.
-   - Mock/stub/fake-provider test flows MUST NOT be called `E2E`.
-   - Mock/stub/fake-provider flows must be labeled `mock`, `simulation`, or `contract`.
-   - Final acceptance for translation-provider integration is `live E2E` pass, not mock pass.
+- Keep changes surgical and avoid unrelated refactors.
+- Validate behavior with concrete commands before closing work.
+- For provider or browser-platform changes, verify against primary docs before implementation.
+- For first-time provider or model-family work, follow `docs -> curl -> integration -> live E2E`.
+- Treat mock browser flows as regression checks only; final provider acceptance is live E2E.
+- Log file-changing instructions in the active session file referenced by `codex/current-session.md`.
+- Use the exact section layout from `codex/log-template.md` for each logged step.
 
-## 5) Workflow Surface Policy
+## Sub-Agent Gate
 
-1. `skills/` is the canonical workflow surface.
-2. `commands/` is compatibility-only and must remain thin shims that delegate to skills.
-3. New workflow logic must be added in skills, not duplicated in command shims.
-4. `/ship` preflight must use `npm run check:local` as the unified local gate.
-5. Test naming policy:
-   - `test:e2e` should point to live E2E behavior.
-   - mock browser flows must use explicit mock naming (for example `test:e2e:mock`).
-6. Git workflow delegation policy:
-   - All repository Git operations MUST run through the dedicated `git-operator` sub-agent by default.
-   - This includes branch creation, branch switching, commit, push, PR creation, PR state changes, merge, and local `main` sync.
-   - `/ship` and `/land` MUST delegate Git execution to `agents/git-operator.md`.
-   - Main-thread Git execution is fallback-only.
-   - If Git sub-agent startup or execution fails, request explicit fallback authorization before continuing.
-   - After authorization, main-agent fallback is allowed but MUST display a clear `DEGRADED MODE` warning that includes the failure reason.
+- The main thread must first decide whether a task should stay local or be recommended for delegation.
+- Do not start a sub-agent silently. If delegation is recommended, ask the user first and let them choose.
+- Recommend delegation when the work is high-noise, read-heavy, parallelizable, or a clean fit for one of the repo roles:
+  - `explorer`
+  - `reviewer`
+  - `docs_researcher`
+- Keep the work on the main thread when it is tightly coupled to the next edit, immediately blocking, or cheaper to do directly than to synchronize through a child agent.
+- If the user declines delegation, continue on the main thread and do not re-ask unless the task shape materially changes.
+- Use `docs/references/sub-agent-delegation.md` as the durable reference for the decision rule and ask pattern.
 
-## 6) Sub-Agent Role Defaults
+## Core Commands
 
-1. Prefer sub-agent execution for:
-   - local test execution
-   - change review
-   - provider/API documentation research
-   - Git workflow execution
-2. Keep the main thread concise:
-   - only high-signal pass/fail summary
-   - actionable blocker details
-3. Default role templates in this repository:
-   - `test-runner`: test execution only + failure evidence only
-   - `planner`: planning breakdown only
-   - `code-reviewer`: quality/risk review only
-   - `build-error-resolver`: build/type error fixes only, minimal diffs
-   - `docs-researcher`: official-doc lookup and source-backed integration constraints only
-   - `git-operator`: branch/commit/push/PR/merge/sync workflow only
-4. `/test` execution policy:
-   - `/test` must run through `test-runner` sub-agent.
-   - Main thread should not execute test commands directly by default.
-   - If sub-agent startup/execution fails, request explicit fallback authorization.
-   - After authorization, main-agent fallback is allowed but MUST display a clear `DEGRADED MODE` warning that includes the failure reason.
-5. Model default for repository agent templates:
-   - use `gpt-5.3-codex` unless a specific step explicitly requires another model.
-   - do not use Claude-specific model labels (for example `sonnet`, `opus`) in this repository's agent templates.
-
-6. Git execution policy:
-   - `/ship` must run through `git-operator` by default.
-   - `/land` must run through `git-operator` by default.
-   - The main thread may summarize Git outcomes, but should not perform Git mutations directly unless degraded fallback is explicitly authorized.
-
-## 7) Skill/Agent Adoption Gate
-
-Before adding any new skill or agent template, it must pass all checks:
-
-1. Directly relevant to translation-plugin engineering efficiency.
-2. Runnable with the current repository command/tooling surface.
-3. No heavy external runtime dependency required.
-4. Clear acceptance checks exist (commands + expected pass/fail outcome).
-5. At most one new skill or one new agent template per iteration.
-
-## 8) Required Log Files
-
-- `codex/logs/session-XXX.md` (the active session file referenced by `codex/current-session.md`)
-- `codex/current-session.md`
-- `codex/log-template.md`
-
-## 9) Step Record Minimum
-
-Each step record must follow `codex/log-template.md`:
-
-- User Instruction
-- Understanding
-- Plan
-- Actions Taken
-- Validation
-- Result
+- `npm run dev`
+- `npm run build`
+- `npm run package`
+- `npm run check:codex`
+- `npm run check:docs`
+- `npm run check:memory`
+- `npm run test:ui-logic`
+- `npm run test:e2e:mock`
+- `npm run test:live`
+- `npm run test:e2e`
+- `npm run check:local`
+- `npm run check:verify`

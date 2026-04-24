@@ -1,0 +1,12 @@
+# Requirement Timeline
+
+This timeline captures durable product and requirement-shape changes from repository history and session distillation.
+
+| Date | Area | Change | Sources |
+| --- | --- | --- | --- |
+| 2026-04-19 | Core translation surface | Established the selection-based translation plugin baseline with a floating marker, translation card, popup settings, and provider-backed runtime flow. | Git history, early repository scaffold, `docs/ARCHITECTURE.md` |
+| 2026-04-20 | Diagnostics and acceptance | Strengthened live diagnostics and made live provider validation the real acceptance path instead of treating mock browser success as sufficient proof. | Git history, `docs/RELIABILITY.md`, `docs/references/provider-workflow-lessons.md` |
+| 2026-04-20 | Runtime config contract | Locked the storage-first display and storage-only runtime rule so popup-visible config and runtime-effective config no longer diverge through hidden env fallback. | Session history distilled into `docs/product-specs/current-state.md` and `docs/SECURITY.md` |
+| 2026-04-21 | Sentence translation | Promoted sentence selection into an accepted plain-translation path with no phonetic or example rows, while preserving the flash-card path for words and short phrases. | Git history, `docs/product-specs/current-state.md`, tests under `tests/e2e` and `tests/translation-service.test.ts` |
+| 2026-04-24 | Docs memory system | Rebuilt the docs system around current specs, requirement history, issue-input notes, references, and archived snapshots instead of the old workflow-oriented docs surface. | `docs/index.md`, `docs/issues/open/provider-workflow-retrospective.md` |
+| 2026-04-24 | Active requirement | Opened the paragraph-mode stabilization stream as the current active requirement to resolve paragraph support boundaries and rendering rules. | `docs/requirements/active/paragraph-mode-stabilization/PRD.md` |

@@ -1,4 +1,0 @@
-interface:
-  display_name: "Context Policy"
-  short_description: "Use /context to control context growth and keep main thread concise."
-  default_prompt: "Assess context risk and return compression/delegation actions with one next step."

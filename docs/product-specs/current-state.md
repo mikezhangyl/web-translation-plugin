@@ -1,0 +1,90 @@
+# Current Product State
+
+## User-Facing Surface
+
+- Stack: Plasmo + React + TypeScript + Manifest V3.
+- Main interaction: a distinct golden/orange floating marker appears near supported text selections and opens the translation card.
+- Popup surface includes:
+  - provider settings
+  - benchmark-model settings
+  - troubleshooting log viewer
+  - copy-logs action
+  - clear-logs action
+- Current target language default remains `zh-CN`.
+
+## Accepted Translation Modes
+
+### Word And Short Phrase
+
+- Stable product path.
+- Uses flash-card output from `qwen-mt-flash`.
+- Card shape:
+  - phonetic
+  - meaning
+  - example
+- Streaming partial card updates are acceptable before the final response settles.
+
+### Sentence
+
+- Stable product path.
+- Uses plain translation output on the same underlying model path.
+- Card shape:
+  - translated sentence only
+  - no phonetic row
+  - no example row
+
+### Paragraph
+
+- Still exploratory.
+- Not yet a stable acceptance path.
+- Product questions still open:
+  - length limits
+  - card presentation rules
+  - evaluation criteria for good output
+
+## Provider And Settings Rules
+
+- Popup supports two saved profiles:
+  - `custom`
+  - `qwen-flash-card`
+- Popup display resolves values in this order:
+  - storage first
+  - env-derived defaults second
+  - blank otherwise
+- Env display fallback is model-aware for Qwen:
+  - selecting `qwen-flash-card` uses `QWEN_API_KEY` and `QWEN_BASE_URL`
+  - custom configurations whose model matches `qwen-mt-*` also use `QWEN_*` for display backfill
+- Runtime translation requests use only saved storage values.
+- There is no hidden runtime env fallback and no automatic provider failover.
+- Empty or incomplete saved config should fail loudly rather than silently switching providers or models.
+
+## Diagnostics And Acceptance
+
+- Troubleshooting logs are part of normal operation, not a developer-only afterthought.
+- The popup log panel is the expected place to inspect:
+  - request lifecycle
+  - provider/model choice
+  - timings
+  - success/failure evidence
+- Mock browser flows are regression checks only.
+- Final provider acceptance requires live E2E with a real provider response and readable troubleshooting evidence.
+- Current live acceptance should continue to cover:
+  - real flash-card output
+  - real sentence translation output
+
+## Known Limits And Risks
+
+- Paragraph translation is not yet productized.
+- Provider knowledge is more stable than before, but there is still no dedicated long-lived provider-facts template beyond the core docs.
+- Benchmark/comparison settings remain diagnostics-oriented and are not the main user-visible acceptance path.
+- Troubleshooting logs intentionally help diagnosis, but they can expose selected text, translated text, URLs, and timing details.
+
+## Next Recommended Workstream
+
+- Stabilize paragraph translation as an explicit product mode.
+- Keep the provider workflow strict for any new provider/model work:
+  - docs
+  - curl connectivity
+  - integration wiring
+  - live E2E
+- Capture newly verified provider quirks in repo docs instead of leaving them only in session history.
