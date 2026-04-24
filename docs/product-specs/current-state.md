@@ -10,6 +10,7 @@
   - troubleshooting log viewer
   - copy-logs action
   - clear-logs action
+- Local vocabulary history is the next planned popup surface, not a shipped feature yet.
 - Current target language default remains `zh-CN`.
 
 ## Accepted Translation Modes
@@ -83,7 +84,8 @@
 
 ## Next Recommended Workstream
 
-- Stabilize paragraph translation as an explicit product mode.
+- Build local vocabulary history for saved word review.
+- Continue stabilizing paragraph translation as an explicit product mode.
 - Keep the provider workflow strict for any new provider/model work:
   - docs
   - curl connectivity

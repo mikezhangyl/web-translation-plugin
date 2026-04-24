@@ -658,3 +658,41 @@ Implement the first constrained paragraph-translation mode, keeping the accepted
 
 ### Result
 Success. Paragraph mode now has an explicit first interaction contract, blocked paragraph selections produce user-visible guidance instead of silent failure, and the harness demonstrates both the new guardrail behavior and a real operational lesson about Playwright artifact collisions under parallel local runs.
+
+## Step 10
+
+### User Instruction
+```text
+好,下一步继续。
+```
+
+### Understanding
+Start the vocabulary-history work on a dedicated feature branch and persist the first implementation-ready requirement and execution plan before writing product code.
+
+### Plan
+1. Create and switch to `codex/vocabulary-history`.
+2. Add the active vocabulary-history PRD and requirement changelog.
+3. Add the active execution plan with lightweight status tracking.
+4. Update active requirement and execution-plan indexes plus the global requirement timeline.
+5. Validate docs and memory checks before implementation starts.
+
+### Actions Taken
+- Created and switched to branch `codex/vocabulary-history`.
+- Added the active vocabulary-history requirement stream:
+  - `docs/requirements/active/vocabulary-history/PRD.md`
+  - `docs/requirements/active/vocabulary-history/CHANGELOG.md`
+- Added the active implementation plan:
+  - `docs/exec-plans/active/vocabulary-history.md`
+- Updated discovery and memory indexes:
+  - `docs/requirements/active/index.md`
+  - `docs/exec-plans/active/index.md`
+  - `docs/requirements/history/timeline.md`
+  - `docs/product-specs/current-state.md`
+- Corrected the session step number after `check:memory` caught a gap from Step 9 to Step 11.
+
+### Validation
+- `npm run check:docs`: PASS
+- `npm run check:memory`: PASS
+
+### Result
+Success. Vocabulary-history product requirements and execution plan are now persisted before implementation, and the active docs/memory gates pass.
