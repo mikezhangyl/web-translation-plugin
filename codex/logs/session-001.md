@@ -696,3 +696,84 @@ Start the vocabulary-history work on a dedicated feature branch and persist the 
 
 ### Result
 Success. Vocabulary-history product requirements and execution plan are now persisted before implementation, and the active docs/memory gates pass.
+
+## Step 11
+
+### User Instruction
+```text
+好的,让我们开始执行吧。
+```
+
+### Understanding
+Start implementing the vocabulary-history feature from the committed planning branch, beginning with a tested storage and sorting contract before wiring product UI.
+
+### Plan
+1. Add failing logic tests for vocabulary normalization, de-duplicating saves, sorting, and deletion.
+2. Implement a `lib/vocabulary-history.ts` module around pure helpers and `chrome.storage.local`.
+3. Run the focused logic tests, then continue into UI wiring if the storage layer is stable.
+4. Update the active execution plan and session log as implementation milestones complete.
+
+### Actions Taken
+- Started implementation on `codex/vocabulary-history` with a clean worktree.
+- Added `lib/vocabulary-history.ts` as the storage boundary for local vocabulary entries, including:
+  - stable storage key
+  - normalized text de-duplication
+  - immutable upsert/delete helpers
+  - newest, oldest, A-Z, and Z-A sorting
+  - `chrome.storage.local` read/write helpers
+- Added `tests/vocabulary-history.test.ts` for storage key stability, normalization, duplicate updates, sorting, and deletion.
+- Added a flash-card-only "Save to notebook" action to the selection translation card.
+- Added popup vocabulary notebook UI with saved count, refresh, sorting, entry display, and delete actions.
+- Added mock browser coverage for saving a flash card, listing it in popup, sorting with a seeded entry, and deleting entries.
+- Fixed a card interaction bug discovered by E2E where inner card mouseup events reprocessed the page selection and reset save state.
+- Updated vocabulary-history requirement docs, product current-state, requirement timeline, and execution-plan status.
+
+### Validation
+- Initial `npm run test:ui-logic` under sandbox failed with `listen EPERM` from `tsx` IPC; reran with approved escalation.
+- `npm run test:ui-logic`: PASS
+- `npm run build`: PASS
+- `npx playwright test tests/e2e/selection-flow.spec.ts -g "flash-card vocabulary"`: PASS
+- `npm run test:e2e:mock`: PASS
+- `npm run check:local`: PASS, including:
+  - `check:codex`
+  - `check:docs`
+  - `check:memory`
+  - logic tests
+  - mock E2E
+  - live provider gate with 2 live E2E tests
+
+### Result
+Success. The first local vocabulary notebook slice is implemented and validated end-to-end.
+
+## Step 12
+
+### User Instruction
+```text
+就是你这个qwen flashcard 你切换到这个选项以后啊,对用户来说,这个model的url应该是写好的,好吗?你可以让用户改的,是至少填写好。 呃这从哪来呢,你可以把这个page信息,比方说模型名字啊,qwen的url放到一个 config文件里,就放到这个插件里面,明文的没关系。这样的话,用户就是你的程序可以读到了,好吗?
+```
+
+### Understanding
+Fix the Qwen Flash Card profile defaults so the non-secret model URL and model name are built into the plugin, not dependent on `.env.local`, while keeping the API key user-provided or explicitly saved.
+
+### Plan
+1. Add built-in Qwen profile constants for base URL and model.
+2. Use those constants in popup defaults, Qwen profile normalization, and runtime dependency construction.
+3. Add regression tests proving Qwen defaults work without `QWEN_BASE_URL`.
+4. Run focused validation and update docs/session memory.
+
+### Actions Taken
+- Added built-in Qwen Flash Card defaults in `lib/translation-settings.ts`:
+  - `DEFAULT_QWEN_BASE_URL`
+  - `DEFAULT_QWEN_FLASH_MODEL`
+- Updated Qwen profile normalization so blank base URL is filled from the built-in DashScope compatible-mode URL.
+- Updated background env-default response and Qwen runtime dependency construction to use the built-in base URL when `QWEN_BASE_URL` is absent.
+- Updated popup fallback code to use the shared Qwen flash model constant.
+- Added regression coverage for missing `QWEN_BASE_URL` and Qwen profile default normalization.
+- Updated product current-state docs with the built-in Qwen profile contract.
+
+### Validation
+- `npm run test:ui-logic`: PASS
+- `npm run build`: PASS
+
+### Result
+Success. `Qwen Flash Card` now has a built-in model URL and model name; users only need to supply/save the API key for the common path.

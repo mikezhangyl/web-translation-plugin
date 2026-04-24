@@ -9,13 +9,13 @@
 ## Status
 
 - [x] Persist requirement and execution plan
-- [ ] Define storage contract and repository helpers
-- [ ] Add save action to the translation card
-- [ ] Add popup vocabulary list
-- [ ] Add sorting: newest, oldest, A-Z, Z-A
-- [ ] Add delete action
-- [ ] Add focused tests
-- [ ] Run `npm run check:local`
+- [x] Define storage contract and repository helpers
+- [x] Add save action to the translation card
+- [x] Add popup vocabulary list
+- [x] Add sorting: newest, oldest, A-Z, Z-A
+- [x] Add delete action
+- [x] Add focused tests
+- [x] Run `npm run check:local`
 
 ## Implementation Sequence
 
@@ -45,6 +45,14 @@
 - `npm run check:codex`
 - `npm run check:docs`
 - `npm run check:memory`
-- `npm run test:ui-logic`
-- `npm run test:e2e:mock` if card or popup flows change
-- `npm run check:local` before closing the implementation pass
+- `npm run test:ui-logic`: PASS
+- `npm run test:e2e:mock`: PASS
+- `npm run check:local`: PASS, including live provider gate
+
+## Implementation Notes
+
+- Vocabulary entries are stored in `chrome.storage.local` under `translation.vocabulary.entries`.
+- Duplicate saves are keyed by `normalizedText`; updates preserve `createdAt` and refresh `updatedAt`.
+- The first UI pass saves only flash-card results from the selection card.
+- The popup now exposes review, sorting, refresh, and delete actions without turning the popup into a full dashboard.
+- Browser E2E exposed and fixed a card interaction bug where inner button mouseup events could trigger selection reprocessing.

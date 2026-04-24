@@ -10,6 +10,7 @@ import {
   type TestInfo
 } from "@playwright/test"
 import { TRANSLATION_STORAGE_KEYS } from "../../lib/translation-settings"
+import { VOCABULARY_STORAGE_KEY, type VocabularyEntry } from "../../lib/vocabulary-history"
 
 const repoRoot = process.cwd()
 const extensionPath = path.join(repoRoot, "build/chrome-mv3-prod")
@@ -118,6 +119,63 @@ test("selection flow shows openai-compatible success", async ({}, testInfo) => {
     await expect(card.getByTestId("translation-provider")).toContainText("Provider: openai_compatible")
     await expect(card.getByTestId("translation-provider")).toContainText("Model: qwen-mt-flash")
     await attachScreenshot(page, testInfo, "e2e-openai-success")
+  })
+})
+
+test("flash-card vocabulary can be saved, sorted, and deleted from the popup", async ({}) => {
+  await runWithExtension(async ({ context, page }) => {
+    await setE2EMode(page, "openai_success")
+    const card = await openCard(page)
+    await expect(card.getByTestId("translation-line-meaning")).toHaveText("黑曜石（OpenAI）")
+
+    await card.getByTestId("save-vocabulary-entry").click()
+    await expect(card.getByTestId("save-vocabulary-entry")).toContainText("Saved to notebook")
+
+    const extensionId = await getExtensionId(context)
+    const popupPage = await context.newPage()
+    await popupPage.goto(`chrome-extension://${extensionId}/popup.html`, {
+      waitUntil: "domcontentloaded"
+    })
+
+    const seededEntry: VocabularyEntry = {
+      id: "seed-apple",
+      sourceText: "Apple",
+      normalizedText: "apple",
+      translation: "苹果",
+      phonetic: "/ˈæpəl/",
+      explanation: "a common fruit",
+      example: "She packed an apple for class.",
+      selectionType: "word",
+      createdAt: "2026-04-24T07:00:00.000Z",
+      updatedAt: "2026-04-24T07:00:00.000Z"
+    }
+    await popupPage.evaluate(
+      async ({ storageKey, entry }) => {
+        const values = await chrome.storage.local.get([storageKey])
+        const entries = Array.isArray(values[storageKey]) ? values[storageKey] : []
+        await chrome.storage.local.set({
+          [storageKey]: [...entries, entry]
+        })
+      },
+      { storageKey: VOCABULARY_STORAGE_KEY, entry: seededEntry }
+    )
+    await popupPage.getByRole("button", { name: "Refresh", exact: true }).click()
+
+    await expect(popupPage.getByRole("heading", { name: "My Vocabulary" })).toBeVisible()
+    const vocabularyList = popupPage.getByTestId("vocabulary-list")
+    await expect(vocabularyList.getByTestId("vocabulary-entry-text").filter({ hasText: "Example" })).toBeVisible()
+    await expect(vocabularyList.getByText("/əbˈsɪdiən/")).toBeVisible()
+    await expect(vocabularyList.getByText("黑曜石（OpenAI）")).toBeVisible()
+
+    await popupPage.getByTestId("vocabulary-sort-order").selectOption("az")
+    await expect(popupPage.getByTestId("vocabulary-entry-text").first()).toHaveText("Apple")
+
+    await popupPage.getByRole("button", { name: "Delete Example" }).click()
+    await expect(vocabularyList.getByTestId("vocabulary-entry-text").filter({ hasText: "Example" })).toHaveCount(0)
+
+    await popupPage.getByRole("button", { name: "Delete Apple" }).click()
+    await expect(popupPage.getByTestId("vocabulary-empty-state")).toBeVisible()
+    await popupPage.close()
   })
 })
 

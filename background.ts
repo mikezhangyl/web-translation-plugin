@@ -20,7 +20,9 @@ import {
   DEFAULT_DEBUG_ENABLED,
   DEFAULT_ANTHROPIC_BASE_URL,
   DEFAULT_ANTHROPIC_MODEL,
+  DEFAULT_QWEN_BASE_URL,
   DEFAULT_QWEN_BENCHMARK_MODELS,
+  DEFAULT_QWEN_FLASH_MODEL,
   DEFAULT_OPENAI_BASE_URL,
   DEFAULT_OPENAI_MODEL,
   type TranslationDebugLogEntry,
@@ -304,8 +306,8 @@ const getQwenEnvDefaults = (): TranslationEnvDefaultsResponse["data"] => ({
   profileId: "qwen-flash-card",
   providerFlavor: "openai-compatible",
   apiKey: readRuntimeEnvSetting("QWEN_API_KEY"),
-  baseUrl: readRuntimeEnvSetting("QWEN_BASE_URL"),
-  model: "qwen-mt-flash"
+  baseUrl: readRuntimeEnvSetting("QWEN_BASE_URL") || DEFAULT_QWEN_BASE_URL,
+  model: DEFAULT_QWEN_FLASH_MODEL
 })
 
 export const getEnvDefaultsForSelection = (selection?: {
@@ -339,8 +341,8 @@ const getQwenProfileDeps = (settings?: TranslationSettings | null): TranslateDep
   env: {
     LLM_PROVIDER_FLAVOR: "openai-compatible",
     LLM_API_KEY: settings?.apiKey ?? "",
-    LLM_BASE_URL: settings?.baseUrl ?? "",
-    LLM_MODEL: "qwen-mt-flash"
+    LLM_BASE_URL: settings?.baseUrl || DEFAULT_QWEN_BASE_URL,
+    LLM_MODEL: DEFAULT_QWEN_FLASH_MODEL
   },
   allowProcessEnvFallback: false
 })

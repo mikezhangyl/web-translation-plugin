@@ -12,12 +12,14 @@ import {
   clamp,
   computeMarkerPositionFromRect,
   DOT_SIZE,
+  getWordCount,
   getSelectionSupport,
   isFlashCardSelection,
   MAX_SUPPORTED_SELECTION_LENGTH,
   MAX_SUPPORTED_SELECTION_WORDS,
   type MarkerPosition
 } from "../lib/selection-ui"
+import { saveVocabularyEntry } from "../lib/vocabulary-history"
 
 const Z_INDEX = 2147483646
 const UI_LOG_PREFIX = "[translation:ui]"
@@ -84,6 +86,8 @@ type SelectionNotice = {
   message: string
   reason: "multiple_paragraphs" | "too_long"
 }
+
+type SaveState = "idle" | "saving" | "saved" | "updated" | "error"
 
 const getMarkerPosition = (): MarkerPosition | null => {
   const selection = window.getSelection()
@@ -311,12 +315,23 @@ const getSelectionNotice = (
   }
 }
 
+const getSelectionContextText = () => {
+  const selection = window.getSelection()
+  if (!selection || selection.rangeCount === 0) {
+    return ""
+  }
+
+  const containerText = selection.getRangeAt(0).commonAncestorContainer.textContent ?? ""
+  return containerText.trim().replace(/\s+/g, " ").slice(0, 280)
+}
+
 const MainWorldSelectionTranslator = () => {
   const [selectedText, setSelectedText] = useState("")
   const [position, setPosition] = useState<MarkerPosition | null>(null)
   const [showCard, setShowCard] = useState(false)
   const [translationState, setTranslationState] = useState<TranslationState | null>(null)
   const [selectionNotice, setSelectionNotice] = useState<SelectionNotice | null>(null)
+  const [saveState, setSaveState] = useState<SaveState>("idle")
   const [overlayRoot, setOverlayRoot] = useState<HTMLElement | null>(null)
   const dotRef = useRef<HTMLDivElement | null>(null)
   const cardRef = useRef<HTMLElement | null>(null)
@@ -409,6 +424,7 @@ const MainWorldSelectionTranslator = () => {
     activeTraceIdRef.current = null
     flowStartAtRef.current = null
     firstResultLoggedRef.current = false
+    setSaveState("idle")
   }
 
   useEffect(() => {
@@ -458,6 +474,7 @@ const MainWorldSelectionTranslator = () => {
           setSelectedText("")
           setPosition(null)
           setTranslationState(null)
+          setSaveState("idle")
         }
         return
       }
@@ -488,6 +505,7 @@ const MainWorldSelectionTranslator = () => {
           setSelectedText("")
           setPosition(null)
           setTranslationState(null)
+          setSaveState("idle")
         }
         return
       }
@@ -511,6 +529,7 @@ const MainWorldSelectionTranslator = () => {
           setSelectedText("")
           setPosition(null)
           setTranslationState(null)
+          setSaveState("idle")
         }
         return
       }
@@ -529,6 +548,7 @@ const MainWorldSelectionTranslator = () => {
           setPosition(nextPos)
           setSelectionNotice(getSelectionNotice(selectionSupport.reason))
           setTranslationState(null)
+          setSaveState("idle")
           return
         }
         if (!showCard) {
@@ -536,6 +556,7 @@ const MainWorldSelectionTranslator = () => {
           setPosition(null)
           setSelectionNotice(null)
           setTranslationState(null)
+          setSaveState("idle")
         }
         return
       }
@@ -556,6 +577,7 @@ const MainWorldSelectionTranslator = () => {
       setPosition(nextPos)
       setSelectionNotice(null)
       setTranslationState(null)
+      setSaveState("idle")
     }
 
     const hideAll = () => {
@@ -564,9 +586,19 @@ const MainWorldSelectionTranslator = () => {
       setShowCard(false)
       setSelectionNotice(null)
       setTranslationState(null)
+      setSaveState("idle")
     }
 
-    const onMouseUp = () => updateFromSelection()
+    const onMouseUp = (event: MouseEvent) => {
+      const target = event.target
+      if (
+        target instanceof Node &&
+        (cardRef.current?.contains(target) || dotRef.current?.contains(target))
+      ) {
+        return
+      }
+      updateFromSelection()
+    }
     const onKeyUp = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
         closeCard("escape")
@@ -776,6 +808,56 @@ const MainWorldSelectionTranslator = () => {
   const displayedExample = translatedCard?.example || data.example
   const shouldShowCardDetails =
     translationState?.status === "success" || translationState?.status === "streaming"
+  const canSaveVocabulary =
+    flashCardMode &&
+    translationState?.status === "success" &&
+    Boolean(translationState.card) &&
+    saveState !== "saving"
+  const saveButtonLabel =
+    saveState === "saving"
+      ? "Saving..."
+      : saveState === "saved"
+        ? "Saved to notebook"
+        : saveState === "updated"
+          ? "Updated in notebook"
+          : saveState === "error"
+            ? "Save failed"
+            : "Save to notebook"
+  const handleSaveVocabulary = async () => {
+    if (!flashCardMode || translationState?.status !== "success" || !translationState.card) {
+      return
+    }
+
+    setSaveState("saving")
+    try {
+      const wordCount = getWordCount(selectedText)
+      const result = await saveVocabularyEntry({
+        sourceText: selectedText,
+        translation: translationState.translatedText,
+        phonetic: translationState.card.phonetic,
+        explanation: translationState.card.meaning,
+        example: translationState.card.example,
+        selectionType: wordCount <= 1 ? "word" : "phrase",
+        sourceUrl: window.location.href,
+        sourceTitle: document.title,
+        contextText: getSelectionContextText()
+      })
+      setSaveState(result.created ? "saved" : "updated")
+      const traceId = activeTraceIdRef.current
+      const startedAt = flowStartAtRef.current
+      if (traceId && startedAt) {
+        emitUiPhase("ui_vocabulary_saved", traceId, startedAt, {
+          created: result.created,
+          normalizedText: result.entry.normalizedText
+        })
+      }
+    } catch (error) {
+      setSaveState("error")
+      console.error(`${UI_LOG_PREFIX} vocabulary_save_failed`, {
+        message: error instanceof Error ? error.message : String(error)
+      })
+    }
+  }
   const renderLinePlaceholder = (testId: string) => (
     <div
       data-testid={testId}
@@ -1012,6 +1094,48 @@ const MainWorldSelectionTranslator = () => {
                       )
                     : null}
                 </div>
+                {flashCardMode && translationState.status === "success" ? (
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginTop: 12 }}>
+                    <button
+                      data-testid="save-vocabulary-entry"
+                      disabled={!canSaveVocabulary}
+                      onClick={() => {
+                        handleSaveVocabulary().catch((error) => {
+                          setSaveState("error")
+                          console.error(`${UI_LOG_PREFIX} vocabulary_save_failed`, {
+                            message: error instanceof Error ? error.message : String(error)
+                          })
+                        })
+                      }}
+                      style={{
+                        alignItems: "center",
+                        background:
+                          saveState === "saved" || saveState === "updated"
+                            ? "linear-gradient(135deg, #f6c47c 0%, #f3a45b 100%)"
+                            : "rgba(255,255,255,0.84)",
+                        border: "1px solid rgba(111,96,121,0.12)",
+                        borderRadius: 999,
+                        boxShadow:
+                          saveState === "saved" || saveState === "updated"
+                            ? `0 10px 24px ${ACCENT_SHADOW}`
+                            : "none",
+                        color: saveState === "saved" || saveState === "updated" ? "#fff" : "#5d5362",
+                        cursor: canSaveVocabulary ? "pointer" : "default",
+                        display: "inline-flex",
+                        fontFamily: CARD_FONT_STACK,
+                        fontSize: 12,
+                        fontWeight: 700,
+                        gap: 8,
+                        opacity: canSaveVocabulary ? 1 : 0.72,
+                        padding: "9px 12px",
+                        transition: "all 140ms ease"
+                      }}
+                      type="button">
+                      <span aria-hidden="true">★</span>
+                      {saveButtonLabel}
+                    </button>
+                  </div>
+                ) : null}
                 <p style={{ color: "#7b707f", fontSize: 11, margin: "10px 0 0" }}>
                   Provider: {translationState.provider.replace("_", " ")} · Model: {FLASH_MODEL}
                 </p>
