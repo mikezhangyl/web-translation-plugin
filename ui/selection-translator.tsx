@@ -10,6 +10,7 @@ import { TranslationRequestQueue } from "../lib/translation-request-queue"
 import {
   buildDryRunTranslation,
   clamp,
+  computeMarkerPositionFromPointer,
   computeMarkerPositionFromRect,
   DOT_SIZE,
   getWordCount,
@@ -17,7 +18,8 @@ import {
   isFlashCardSelection,
   MAX_SUPPORTED_SELECTION_LENGTH,
   MAX_SUPPORTED_SELECTION_WORDS,
-  type MarkerPosition
+  type MarkerPosition,
+  type PointerPosition
 } from "../lib/selection-ui"
 import { saveVocabularyEntry } from "../lib/vocabulary-history"
 
@@ -88,22 +90,6 @@ type SelectionNotice = {
 }
 
 type SaveState = "idle" | "saving" | "saved" | "updated" | "error"
-
-const getMarkerPosition = (): MarkerPosition | null => {
-  const selection = window.getSelection()
-  if (!selection || selection.rangeCount === 0 || selection.isCollapsed) {
-    return null
-  }
-
-  const selectionRect = selection.getRangeAt(0).getBoundingClientRect()
-  const rect = {
-    width: selectionRect.width,
-    height: selectionRect.height,
-    right: selectionRect.right,
-    bottom: selectionRect.bottom
-  }
-  return computeMarkerPositionFromRect(rect, { width: window.innerWidth, height: window.innerHeight })
-}
 
 const markerStyle = (position: MarkerPosition) =>
   ({
@@ -452,7 +438,7 @@ const MainWorldSelectionTranslator = () => {
   }, [])
 
   useEffect(() => {
-    const updateFromSelection = () => {
+    const updateFromSelection = (pointerPosition?: PointerPosition) => {
       const selection = window.getSelection()
       const startedAt = Date.now()
       const traceId = activeTraceIdRef.current ?? createTraceId()
@@ -514,7 +500,9 @@ const MainWorldSelectionTranslator = () => {
         width: window.innerWidth,
         height: window.innerHeight
       }
-      const nextPos = computeMarkerPositionFromRect(rect, viewport)
+      const nextPos = pointerPosition
+        ? computeMarkerPositionFromPointer(pointerPosition, viewport)
+        : computeMarkerPositionFromRect(rect, viewport)
       if (!nextPos) {
         emitUiPhase("ui_selection_rejected", traceId, startedAt, {
           reason: "marker_position_unavailable",
@@ -570,6 +558,8 @@ const MainWorldSelectionTranslator = () => {
         rectBottom: rect.bottom,
         markerLeft: nextPos.left,
         markerTop: nextPos.top,
+        pointerX: pointerPosition?.x ?? null,
+        pointerY: pointerPosition?.y ?? null,
         viewportWidth: window.innerWidth,
         viewportHeight: window.innerHeight
       })
@@ -597,7 +587,7 @@ const MainWorldSelectionTranslator = () => {
       ) {
         return
       }
-      updateFromSelection()
+      updateFromSelection({ x: event.clientX, y: event.clientY })
     }
     const onKeyUp = (event: KeyboardEvent) => {
       if (event.key === "Escape") {

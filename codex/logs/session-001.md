@@ -777,3 +777,36 @@ Fix the Qwen Flash Card profile defaults so the non-secret model URL and model n
 
 ### Result
 Success. `Qwen Flash Card` now has a built-in model URL and model name; users only need to supply/save the API key for the common path.
+
+## Step 13
+
+### User Instruction
+```text
+现在让我们做个优化啊,现在那个翻译的那个小圆点一直出现在选中文字的右下方,点起来不方便,我想让这个小圆点始终出现在鼠标位置的上方,不要遮盖所选的文字和左选的文字,这个做得到吗?
+```
+
+### Understanding
+Change the selection marker placement from the selected text rectangle's lower-right corner to a position above the user's mouse location, while preserving viewport clamping and fallback behavior for keyboard/scroll-driven selection updates.
+
+### Plan
+1. Add a tested pure helper for pointer-based marker placement above the pointer.
+2. Pass mouse coordinates from `mouseup` into selection processing.
+3. Keep rectangle-based placement as fallback when no pointer position is available.
+4. Run logic tests and build.
+
+### Actions Taken
+- Started marker-position optimization.
+- Added `computeMarkerPositionFromPointer` in `lib/selection-ui.ts`.
+- Added unit coverage proving pointer-based marker placement appears above the pointer and clamps near viewport edges.
+- Updated `ui/selection-translator.tsx` so mouse selection updates pass `mouseup.clientX/clientY` into marker placement.
+- Preserved rectangle-based marker placement as fallback for keyboard, resize, and scroll-driven selection updates.
+- Removed the unused rectangle-only marker helper from the content UI module.
+- Added `DOT_POINTER_EXTRA_TOP_OFFSET = 3` to move the pointer-based marker an additional 3px upward after visual review.
+
+### Validation
+- `npm run test:ui-logic`: PASS
+- `npm run build`: PASS
+- `npm run test:e2e:mock`: PASS
+
+### Result
+Success. The marker now appears slightly above the mouse position for mouse-driven selections while keeping existing fallback behavior.

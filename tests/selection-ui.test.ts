@@ -4,6 +4,7 @@ import assert from "node:assert/strict"
 import {
   buildDryRunTranslation,
   clamp,
+  computeMarkerPositionFromPointer,
   computeMarkerPositionFromRect,
   getSelectionSupport,
   isFlashCardSelection,
@@ -76,6 +77,24 @@ test("computeMarkerPositionFromRect clamps marker to viewport", () => {
   )
 
   assert.deepEqual(pos, { left: 1176, top: 776 })
+})
+
+test("computeMarkerPositionFromPointer places marker above the pointer", () => {
+  const pos = computeMarkerPositionFromPointer(
+    { x: 300, y: 240 },
+    { width: 1200, height: 800 }
+  )
+
+  assert.deepEqual(pos, { left: 292, top: 213 })
+})
+
+test("computeMarkerPositionFromPointer clamps marker near viewport edges", () => {
+  const pos = computeMarkerPositionFromPointer(
+    { x: 3, y: 4 },
+    { width: 1200, height: 800 }
+  )
+
+  assert.deepEqual(pos, { left: 8, top: 8 })
 })
 
 test("buildDryRunTranslation returns expected shape and preserves source word", () => {

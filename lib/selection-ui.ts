@@ -8,6 +8,11 @@ export type ViewportSize = {
   height: number
 }
 
+export type PointerPosition = {
+  x: number
+  y: number
+}
+
 export type SelectionRect = {
   width: number
   height: number
@@ -27,6 +32,7 @@ export type SelectionSupport = {
 
 export const DOT_SIZE = 16
 export const DOT_OFFSET = 8
+export const DOT_POINTER_EXTRA_TOP_OFFSET = 3
 export const MAX_SUPPORTED_SELECTION_LENGTH = 1_500
 export const MAX_SUPPORTED_SELECTION_WORDS = 250
 export const MAX_FLASH_CARD_WORDS = 4
@@ -122,6 +128,23 @@ export const computeMarkerPositionFromRect = (
 
   const left = clamp(rect.right + offset, offset, viewport.width - dotSize - offset)
   const top = clamp(rect.bottom + offset, offset, viewport.height - dotSize - offset)
+
+  return { left, top }
+}
+
+export const computeMarkerPositionFromPointer = (
+  pointer: PointerPosition,
+  viewport: ViewportSize,
+  dotSize = DOT_SIZE,
+  offset = DOT_OFFSET,
+  extraTopOffset = DOT_POINTER_EXTRA_TOP_OFFSET
+): MarkerPosition => {
+  const left = clamp(pointer.x - dotSize / 2, offset, viewport.width - dotSize - offset)
+  const top = clamp(
+    pointer.y - dotSize - offset - extraTopOffset,
+    offset,
+    viewport.height - dotSize - offset
+  )
 
   return { left, top }
 }
