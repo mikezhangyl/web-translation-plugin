@@ -810,3 +810,100 @@ Change the selection marker placement from the selected text rectangle's lower-r
 
 ### Result
 Success. The marker now appears slightly above the mouse position for mouse-driven selections while keeping existing fallback behavior.
+
+## Step 14
+
+### User Instruction
+```text
+现在我发现一个问题啊,就是有的英语翻译啊,它的原文啊,其实除了字面的表面意思,其实还有真正的一层意思。 比方说刚才我翻译的就是叫什么coffee badging,这个词不能单从字面意思去翻。 所以我在想是不是修改一下提示词,可以改给两种翻译,一种是把里面的就是用自然的方式去翻,而不是字面直翻,知道吧?但是如果检测到里面有需要不能用字面直翻的词汇和词汇,在下面要有注解,为什么这个东西在这个词汇在比方说英语里面常用来表达什么什么什么?你懂我意思吗?
+```
+
+### Understanding
+Improve flash-card translation for idioms, workplace slang, cultural expressions, and other phrases where literal translation is misleading. The card should prioritize natural Chinese meaning, optionally show literal translation, and include an explanatory usage note when needed.
+
+### Plan
+1. Extend the flash-card contract with optional `literal` and `note` fields.
+2. Update the prompt to request natural translation first, literal translation when useful, and usage notes for non-literal expressions.
+3. Render and persist the new fields in the card, vocabulary history, and popup.
+4. Add tests before implementation and validate logic/build paths.
+
+### Actions Taken
+- Started flash-card semantic note enhancement.
+- Extended `TranslationCard` with optional `literal` and `note` fields.
+- Updated the Qwen flash-card prompt so `meaning` asks for natural Simplified Chinese semantics instead of word-by-word literal translation.
+- Added prompt instructions for:
+  - optional literal translation
+  - usage notes for idioms, slang, cultural expressions, domain-specific phrases, and misleading literal translations
+- Updated flash-card parsing, partial streaming parsing, normalized card text construction, and vocabulary persistence for the new fields.
+- Updated the translation card UI to show literal translation and a highlighted usage note when present.
+- Updated popup vocabulary history rendering to preserve and show literal/note fields.
+- Added regression tests for `coffee badging`-style non-literal phrases and vocabulary persistence.
+- Updated product/requirement memory docs.
+
+### Validation
+- `npm run test:ui-logic`: PASS
+- `npm run build`: PASS
+- `npm run test:e2e:mock`: PASS
+
+### Result
+Success. Flash-card translation now prioritizes natural meaning and can explain non-literal English expressions with optional literal translation and usage notes.
+
+## Step 15
+
+### User Instruction
+```text
+我比较在乎的是,我们下一次遇到类似情况,你会怎么样采取我们刚才说的正确的方式,我们是不是或者怎样把Harness的那个相关的一些规定再重新再添加一下。
+```
+
+### Understanding
+Persist a repo-level harness rule so future LLM invocation changes are not implemented directly in product code before provider-level prompt/parameter probing has produced acceptable evidence.
+
+### Plan
+1. Add a concise mandatory rule to `AGENTS.md`.
+2. Expand provider workflow docs with the prompt/parameter probe-first sequence.
+3. Validate docs and memory checks.
+
+### Actions Taken
+- Added a repo-level rule to `AGENTS.md`: LLM invocation changes must run provider probes before product-code edits.
+- Expanded `docs/references/provider-workflow-lessons.md` with a prompt/parameter change gate covering:
+  - prompt edits
+  - temperature/sampling changes
+  - structured-output schema changes
+  - model selection/routing
+  - expected semantic output changes such as idiom handling and translation policy
+- Defined the required sequence: representative inputs, direct provider probe, raw output capture, user confirmation for subjective semantics, then implementation.
+
+### Validation
+- `npm run check:docs`: PASS
+- `npm run check:memory`: PASS
+
+### Result
+Success. Future prompt/parameter/semantic LLM invocation changes now have a durable probe-first harness rule.
+
+## Step 16
+
+### User Instruction
+```text
+请你多改动吧,把它纠正过来。
+```
+
+### Understanding
+Correct the harness terminology from the ambiguous "LLM behavior change" to the more precise "LLM invocation change", making clear that the product changes how it calls and interprets the model rather than changing the model itself.
+
+### Plan
+1. Update `AGENTS.md` wording.
+2. Rename and clarify the reference section in `docs/references/provider-workflow-lessons.md`.
+3. Update session memory and validate docs/memory checks.
+
+### Actions Taken
+- Replaced "LLM behavior changes" with "LLM invocation changes" in repo-level working rules.
+- Clarified that invocation changes cover product-side prompts, message layout, sampling parameters, schemas, model selection, routing, streaming mode, and expected semantic output.
+- Clarified that these rules do not mean changing the underlying model itself.
+- Updated provider workflow wording from prompt quality to invocation quality where relevant.
+
+### Validation
+- `npm run check:docs`: PASS
+- `npm run check:memory`: PASS
+
+### Result
+Success. Harness terminology now uses "LLM invocation changes" and explicitly scopes the rule to product-side model calls and response interpretation.
