@@ -158,6 +158,60 @@ test("selection flow shows sentence translation without phonetic or example", as
   })
 })
 
+test("selection flow shows a guidance card for oversized paragraph selections without sending a request", async ({}) => {
+  await runWithExtension(async ({ context, page }) => {
+    const extensionId = await getExtensionId(context)
+    const popupPage = await context.newPage()
+    await popupPage.goto(`chrome-extension://${extensionId}/popup.html`, {
+      waitUntil: "domcontentloaded"
+    })
+    await popupPage.evaluate(async (keys) => {
+      await chrome.storage.local.set({
+        [keys.debugEnabled]: true,
+        [keys.debugLogs]: []
+      })
+    }, TRANSLATION_STORAGE_KEYS)
+    await popupPage.close()
+
+    const longParagraph = Array.from({ length: 251 }, (_, index) => `word${index}`).join(" ")
+    await page.evaluate((paragraphText) => {
+      document.body.innerHTML = `
+        <main style="padding: 48px; font-family: Arial, sans-serif;">
+          <h1 style="font-size: 32px; line-height: 1.2; margin: 0 0 18px;">Obsidian</h1>
+          <p style="font-size: 18px; line-height: 1.6; max-width: 680px; margin: 0;">${paragraphText}</p>
+        </main>
+      `
+    }, longParagraph)
+
+    const card = await openSentenceCard(page)
+    await expect(card.getByTestId("translation-selection-notice-title")).toHaveText("Selection needs trimming")
+    await expect(card.getByTestId("translation-selection-notice-message")).toContainText(
+      "single paragraph up to 250 words or 1500 characters"
+    )
+    await expect(card.getByTestId("translation-loading")).toHaveCount(0)
+    await expect(card.getByTestId("translation-error")).toHaveCount(0)
+
+    const inspectPopup = await context.newPage()
+    await inspectPopup.goto(`chrome-extension://${extensionId}/popup.html`, {
+      waitUntil: "domcontentloaded"
+    })
+    const logSummary = await inspectPopup.evaluate(async (keys) => {
+      const values = await chrome.storage.local.get([keys.debugLogs])
+      const logs = Array.isArray(values[keys.debugLogs]) ? values[keys.debugLogs] : []
+      return {
+        rejectedReasons: logs
+          .filter((entry) => entry?.event === "ui_selection_rejected")
+          .map((entry) => String(entry?.payload?.reason ?? "")),
+        requestReceivedCount: logs.filter((entry) => entry?.event === "request_received").length
+      }
+    }, TRANSLATION_STORAGE_KEYS)
+    await inspectPopup.close()
+
+    await expect(logSummary.rejectedReasons).toContain("too_long")
+    await expect(logSummary.requestReceivedCount).toBe(0)
+  })
+})
+
 test("selection flow shows error when configured provider fails", async ({}, testInfo) => {
   await runWithExtension(async ({ page }) => {
     await setE2EMode(page, "provider_fail")

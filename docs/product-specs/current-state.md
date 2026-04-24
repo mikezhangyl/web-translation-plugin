@@ -36,11 +36,13 @@
 ### Paragraph
 
 - Still exploratory.
-- Not yet a stable acceptance path.
-- Product questions still open:
-  - length limits
-  - card presentation rules
-  - evaluation criteria for good output
+- Translation is attempted only for a single selected paragraph.
+- Current guardrails:
+  - reject selections that span multiple paragraphs
+  - reject selections longer than `250` whitespace-delimited words
+  - reject selections longer than `1500` characters
+- When paragraph selection is rejected by these limits, the card stays user-visible and explains how to trim the selection instead of silently failing.
+- Not yet a stable acceptance path for translation quality or rendering richness.
 
 ## Provider And Settings Rules
 
@@ -74,7 +76,7 @@
 
 ## Known Limits And Risks
 
-- Paragraph translation is not yet productized.
+- Paragraph translation remains constrained and is not yet productized beyond the single-paragraph limit contract.
 - Provider knowledge is more stable than before, but there is still no dedicated long-lived provider-facts template beyond the core docs.
 - Benchmark/comparison settings remain diagnostics-oriented and are not the main user-visible acceptance path.
 - Troubleshooting logs intentionally help diagnosis, but they can expose selected text, translated text, URLs, and timing details.

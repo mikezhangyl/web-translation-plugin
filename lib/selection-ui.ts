@@ -15,19 +15,85 @@ export type SelectionRect = {
   bottom: number
 }
 
+export type UnsupportedSelectionReason = "empty" | "multiple_paragraphs" | "too_long"
+
+export type SelectionSupport = {
+  supported: boolean
+  reason: UnsupportedSelectionReason | null
+  textLength: number
+  wordCount: number
+  paragraphCount: number
+}
+
 export const DOT_SIZE = 16
 export const DOT_OFFSET = 8
-export const MAX_SUPPORTED_SELECTION_LENGTH = 360
+export const MAX_SUPPORTED_SELECTION_LENGTH = 1_500
+export const MAX_SUPPORTED_SELECTION_WORDS = 250
 export const MAX_FLASH_CARD_WORDS = 4
 export const MAX_FLASH_CARD_LENGTH = 48
 
 export const clamp = (value: number, min: number, max: number) => Math.min(Math.max(value, min), max)
 
-const getWordCount = (text: string) =>
+export const getWordCount = (text: string) =>
   text
     .trim()
     .split(/\s+/)
     .filter(Boolean).length
+
+const getParagraphCount = (text: string) =>
+  text
+    .replace(/\r/g, "")
+    .trim()
+    .split(/\n\s*\n+/)
+    .map((block) => block.trim())
+    .filter(Boolean).length
+
+export const getSelectionSupport = (text: string): SelectionSupport => {
+  const normalized = text.trim()
+  const wordCount = getWordCount(normalized)
+  const paragraphCount = getParagraphCount(normalized)
+
+  if (!normalized) {
+    return {
+      supported: false,
+      reason: "empty",
+      textLength: 0,
+      wordCount: 0,
+      paragraphCount: 0
+    }
+  }
+
+  if (paragraphCount > 1) {
+    return {
+      supported: false,
+      reason: "multiple_paragraphs",
+      textLength: normalized.length,
+      wordCount,
+      paragraphCount
+    }
+  }
+
+  if (
+    normalized.length > MAX_SUPPORTED_SELECTION_LENGTH ||
+    wordCount > MAX_SUPPORTED_SELECTION_WORDS
+  ) {
+    return {
+      supported: false,
+      reason: "too_long",
+      textLength: normalized.length,
+      wordCount,
+      paragraphCount
+    }
+  }
+
+  return {
+    supported: true,
+    reason: null,
+    textLength: normalized.length,
+    wordCount,
+    paragraphCount
+  }
+}
 
 export const isFlashCardSelection = (text: string) => {
   const normalized = text.trim()
@@ -41,11 +107,7 @@ export const isFlashCardSelection = (text: string) => {
 }
 
 export const isSupportedSelection = (text: string) => {
-  const normalized = text.trim()
-  if (!normalized) {
-    return false
-  }
-  return normalized.length <= MAX_SUPPORTED_SELECTION_LENGTH
+  return getSelectionSupport(text).supported
 }
 
 export const computeMarkerPositionFromRect = (

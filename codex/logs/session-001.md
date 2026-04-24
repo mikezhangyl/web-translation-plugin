@@ -619,3 +619,42 @@ Implement the accepted harness architecture review fixes: make the Codex agent m
 
 ### Result
 Success. The Codex control layer is now schema-checked by the repo gate, the docs memory tree is staged, Playwright artifacts are ignored, and the full verification gate passes.
+
+## Step 9
+
+### User Instruction
+```text
+那让我们继续把，我们实现这个段落翻译的功能，让我看看我们搭建的 harness 有什么实际的效果
+```
+
+### Understanding
+Implement the first constrained paragraph-translation mode, keeping the accepted word and sentence paths intact while making the new behavior visible through the existing test and harness layers.
+
+### Plan
+1. Inspect the current selection rules, card rendering path, and test entrypoints.
+2. Add explicit paragraph-selection constraints and a user-visible card message for blocked selections.
+3. Add unit and mock-E2E coverage for the new limits and rerun the verification matrix, including live acceptance if configuration is available.
+4. Update the product memory docs to reflect the accepted paragraph constraints.
+
+### Actions Taken
+- Added explicit paragraph-selection support analysis in `lib/selection-ui.ts`, including:
+  - single-paragraph validation
+  - maximum `250` whitespace-delimited words
+  - maximum `1500` characters
+  - machine-readable rejection reasons for UI and tests
+- Updated `ui/selection-translator.tsx` so unsupported paragraph selections keep the translation card visible and show guidance instead of silently disappearing.
+- Prevented blocked paragraph selections from sending runtime translation requests.
+- Added unit coverage in `tests/selection-ui.test.ts` for accepted paragraph input, multi-paragraph rejection, and word-limit rejection.
+- Added mock browser regression coverage in `tests/e2e/selection-flow.spec.ts` to verify:
+  - the guidance card appears for oversized paragraph selections
+  - no translation request is sent for blocked selections
+  - troubleshooting logs capture the rejection reason
+- Updated the product and requirement memory docs to record the accepted paragraph constraints and timeline entry.
+
+### Validation
+- `npm run check:verify`: PASS
+- `npm run test:live`: PASS
+- Initial concurrent verification attempt exposed a Playwright artifact-directory collision when two Playwright suites were run in parallel against the same repo workspace; the paragraph-mode assertions themselves passed, and the full suite passed once rerun serially.
+
+### Result
+Success. Paragraph mode now has an explicit first interaction contract, blocked paragraph selections produce user-visible guidance instead of silent failure, and the harness demonstrates both the new guardrail behavior and a real operational lesson about Playwright artifact collisions under parallel local runs.

@@ -12,8 +12,10 @@ import {
   clamp,
   computeMarkerPositionFromRect,
   DOT_SIZE,
+  getSelectionSupport,
   isFlashCardSelection,
-  isSupportedSelection,
+  MAX_SUPPORTED_SELECTION_LENGTH,
+  MAX_SUPPORTED_SELECTION_WORDS,
   type MarkerPosition
 } from "../lib/selection-ui"
 
@@ -76,6 +78,12 @@ type TranslationState =
       provider: "openai_compatible" | "anthropic_compatible"
       message: string
     }
+
+type SelectionNotice = {
+  title: string
+  message: string
+  reason: "multiple_paragraphs" | "too_long"
+}
 
 const getMarkerPosition = (): MarkerPosition | null => {
   const selection = window.getSelection()
@@ -285,11 +293,30 @@ const getE2EMode = (): TranslateRequest["e2eMode"] => {
   return undefined
 }
 
+const getSelectionNotice = (
+  reason: SelectionNotice["reason"]
+): SelectionNotice => {
+  if (reason === "multiple_paragraphs") {
+    return {
+      reason,
+      title: "Select a single paragraph",
+      message: "Paragraph translation currently supports one paragraph at a time. Please trim the selection to a single block."
+    }
+  }
+
+  return {
+    reason,
+    title: "Selection needs trimming",
+    message: `Paragraph translation currently supports a single paragraph up to ${MAX_SUPPORTED_SELECTION_WORDS} words or ${MAX_SUPPORTED_SELECTION_LENGTH} characters. Please shorten the selection and try again.`
+  }
+}
+
 const MainWorldSelectionTranslator = () => {
   const [selectedText, setSelectedText] = useState("")
   const [position, setPosition] = useState<MarkerPosition | null>(null)
   const [showCard, setShowCard] = useState(false)
   const [translationState, setTranslationState] = useState<TranslationState | null>(null)
+  const [selectionNotice, setSelectionNotice] = useState<SelectionNotice | null>(null)
   const [overlayRoot, setOverlayRoot] = useState<HTMLElement | null>(null)
   const dotRef = useRef<HTMLDivElement | null>(null)
   const cardRef = useRef<HTMLElement | null>(null)
@@ -437,26 +464,8 @@ const MainWorldSelectionTranslator = () => {
 
       const range = selection.getRangeAt(0)
       const text = selection.toString().trim()
-      const wordCount = text
-        .split(/\s+/)
-        .map((item) => item.trim())
-        .filter(Boolean).length
-
-      if (!isSupportedSelection(text)) {
-        if (text) {
-          emitUiPhase("ui_selection_rejected", traceId, startedAt, {
-            reason: "unsupported_selection",
-            textLength: text.length,
-            wordCount
-          })
-        }
-        if (!showCard) {
-          setSelectedText("")
-          setPosition(null)
-          setTranslationState(null)
-        }
-        return
-      }
+      const selectionSupport = getSelectionSupport(text)
+      const wordCount = selectionSupport.wordCount
 
       const selectionRect = range.getBoundingClientRect()
       const rect = {
@@ -506,6 +515,31 @@ const MainWorldSelectionTranslator = () => {
         return
       }
 
+      if (!selectionSupport.supported) {
+        if (text) {
+          emitUiPhase("ui_selection_rejected", traceId, startedAt, {
+            reason: selectionSupport.reason ?? "unsupported_selection",
+            textLength: selectionSupport.textLength,
+            wordCount,
+            paragraphCount: selectionSupport.paragraphCount
+          })
+        }
+        if (!showCard && selectionSupport.reason && selectionSupport.reason !== "empty") {
+          setSelectedText(text)
+          setPosition(nextPos)
+          setSelectionNotice(getSelectionNotice(selectionSupport.reason))
+          setTranslationState(null)
+          return
+        }
+        if (!showCard) {
+          setSelectedText("")
+          setPosition(null)
+          setSelectionNotice(null)
+          setTranslationState(null)
+        }
+        return
+      }
+
       emitUiPhase("ui_marker_position_computed", traceId, startedAt, {
         textLength: text.length,
         wordCount,
@@ -520,6 +554,7 @@ const MainWorldSelectionTranslator = () => {
       })
       setSelectedText(text)
       setPosition(nextPos)
+      setSelectionNotice(null)
       setTranslationState(null)
     }
 
@@ -527,6 +562,7 @@ const MainWorldSelectionTranslator = () => {
       setSelectedText("")
       setPosition(null)
       setShowCard(false)
+      setSelectionNotice(null)
       setTranslationState(null)
     }
 
@@ -593,7 +629,7 @@ const MainWorldSelectionTranslator = () => {
   }, [showCard])
 
   useEffect(() => {
-    if (!showCard || !selectedText || translationState) {
+    if (!showCard || !selectedText || translationState || selectionNotice) {
       return
     }
 
@@ -713,7 +749,7 @@ const MainWorldSelectionTranslator = () => {
           errorCode: "UNKNOWN"
         })
       })
-  }, [showCard, selectedText, translationState])
+  }, [selectionNotice, selectedText, showCard, translationState])
 
   if (!overlayRoot || !position || !selectedText) {
     return null
@@ -722,6 +758,12 @@ const MainWorldSelectionTranslator = () => {
   const data = buildDryRunTranslation(selectedText)
   const flashCardMode = isFlashCardSelection(selectedText)
   const shouldShowPlaceholderDetails = translationState?.status === "error"
+  const shouldShowSelectionNotice = Boolean(selectionNotice)
+  const providerLabel = shouldShowSelectionNotice
+    ? "not requested"
+    : translationState?.status
+      ? translationState.provider
+      : "pending"
   const translatedCard =
     translationState?.status === "success"
       ? translationState.card
@@ -806,7 +848,11 @@ const MainWorldSelectionTranslator = () => {
                   Quick Translate
                 </span>
                 <span style={{ color: "#342938", fontSize: 13 }}>
-                  {flashCardMode ? "Live Flash Card" : "Live Sentence Translation"}
+                  {shouldShowSelectionNotice
+                    ? "Selection Guidance"
+                    : flashCardMode
+                      ? "Live Flash Card"
+                      : "Live Sentence Translation"}
                 </span>
               </div>
             </div>
@@ -821,7 +867,7 @@ const MainWorldSelectionTranslator = () => {
                   fontSize: 11,
                   padding: "7px 10px"
                 }}>
-                Provider: {translationState?.status ? translationState.provider : "pending"} · Model: {FLASH_MODEL}
+                Provider: {providerLabel} · Model: {FLASH_MODEL}
               </span>
               <button
                 aria-label="Close translation card"
@@ -987,6 +1033,32 @@ const MainWorldSelectionTranslator = () => {
                   {translationState.message}
                 </p>
               </>
+            ) : null}
+            {shouldShowSelectionNotice ? (
+              <div
+                data-testid="translation-selection-notice"
+                style={{
+                  background: "rgba(247,243,247,0.92)",
+                  border: "1px solid rgba(111,96,121,0.08)",
+                  borderRadius: 20,
+                  padding: "16px 16px 14px"
+                }}>
+                <p
+                  data-testid="translation-selection-notice-title"
+                  style={{
+                    color: "#9a5a2d",
+                    fontSize: 16,
+                    fontWeight: 600,
+                    margin: "0 0 8px"
+                  }}>
+                  {selectionNotice?.title}
+                </p>
+                <p
+                  data-testid="translation-selection-notice-message"
+                  style={{ color: "#6f6475", fontSize: 13, lineHeight: 1.5, margin: 0 }}>
+                  {selectionNotice?.message}
+                </p>
+              </div>
             ) : null}
           </div>
 

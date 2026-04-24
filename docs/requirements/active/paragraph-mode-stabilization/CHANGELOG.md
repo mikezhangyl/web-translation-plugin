@@ -20,3 +20,8 @@ superseded_by: []
   - preserve sentence/plain-translation behavior
   - define a real paragraph contract before treating it as stable
   - keep storage-only runtime configuration and live-E2E acceptance rules intact
+- Added the first explicit paragraph-selection guardrails:
+  - single paragraph only
+  - maximum `250` whitespace-delimited words
+  - maximum `1500` characters
+  - show a guidance card when the selection must be trimmed
