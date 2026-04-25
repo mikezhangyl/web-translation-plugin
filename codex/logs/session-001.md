@@ -1199,3 +1199,34 @@ Make the documented recurring prefix approval list explicitly include both `git 
 
 ### Result
 Success. The prefix approval documentation now explicitly names both staging and committing.
+
+## Step 26
+
+### User Instruction
+```text
+把这段计划落盘存起来把， 你打算存在哪里？
+好的，做吧
+```
+
+### Understanding
+Persist the vocabulary review product direction as durable project memory. The selected text is a requirement-level plan for contextual vocabulary learning, special-expression awareness, active recall, lightweight review scheduling, and friendly learning feedback.
+
+### Plan
+1. Create a new active requirement stream at `docs/requirements/active/vocabulary-review/`.
+2. Add `PRD.md` and `CHANGELOG.md`.
+3. Update the active requirements index and global requirement timeline.
+4. Update session memory and validate docs/memory checks.
+
+### Actions Taken
+- Added `docs/requirements/active/vocabulary-review/PRD.md`.
+- Added `docs/requirements/active/vocabulary-review/CHANGELOG.md`.
+- Updated `docs/requirements/active/index.md`.
+- Updated `docs/requirements/history/timeline.md`.
+- Advanced `codex/current-session.md` to the next step.
+
+### Validation
+- `npm run check:docs`: PASS.
+- `npm run check:memory`: PASS.
+
+### Result
+Success. The vocabulary review plan is now stored as an active requirement stream.
