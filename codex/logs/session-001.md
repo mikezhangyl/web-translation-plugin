@@ -1110,3 +1110,35 @@ Refine the translation card from an oversized, noisy panel into a compact profes
 
 ### Result
 Success. The card now has a tighter app-like popover layout, concise header copy, and persistent draggable positioning.
+
+## Step 23
+
+### User Instruction
+```text
+就按照你说的做
+```
+
+### Understanding
+Create a PR for the pushed branch, inspect GitHub checks, and fix any CI issue found before handing the PR back.
+
+### Plan
+1. Create a PR from `codex/vocabulary-history` to `main`.
+2. Check PR status with GitHub CLI.
+3. Inspect failed checks.
+4. Patch CI if the failure is workflow/environment-related.
+5. Commit and push the fix, then re-check PR status.
+
+### Actions Taken
+- Created PR `#1`: `feat: Add vocabulary history and translation UX`.
+- Checked PR checks and found `mock-e2e` failing.
+- Inspected the failed GitHub Actions log.
+- Diagnosed the failure as a CI environment issue: Playwright launches headed Chromium for extension tests, but the Ubuntu runner has no X server.
+- Updated `.github/workflows/mock-e2e.yml` to run the mock E2E suite under `xvfb-run --auto-servernum`.
+
+### Validation
+- `npm run check:docs`: PASS
+- `npm run check:memory`: PASS
+- Pending commit, push, and PR check refresh after this log update.
+
+### Result
+In progress. PR exists, and the CI failure has a targeted workflow fix ready to commit and push.

@@ -19,4 +19,4 @@ jobs:
       - name: Install Playwright Chromium
         run: npx playwright install chromium
       - name: Run mock browser regression suite
-        run: npm run test:e2e:mock
+        run: xvfb-run --auto-servernum npm run test:e2e:mock
