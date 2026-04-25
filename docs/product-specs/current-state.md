@@ -4,6 +4,11 @@
 
 - Stack: Plasmo + React + TypeScript + Manifest V3.
 - Main interaction: a distinct golden/orange floating marker appears near supported text selections and opens the translation card.
+- Translation card presentation is a compact popover:
+  - concise title: `Live translation`
+  - smaller professional typography and tighter spacing
+  - draggable from non-interactive card surfaces
+  - last dragged position is persisted in `chrome.storage.local`
 - Popup surface includes:
   - provider settings
   - benchmark-model settings

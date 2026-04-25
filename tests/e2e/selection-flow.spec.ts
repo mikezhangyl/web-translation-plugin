@@ -209,12 +209,53 @@ test("selection flow shows sentence translation without phonetic or example", as
   await runWithExtension(async ({ page }) => {
     await setE2EMode(page, "openai_success")
     const card = await openSentenceCard(page)
+    await expect(card.getByTestId("translation-card-title")).toHaveText("Live translation")
+    await expect(card.getByText("Quick Translate")).toHaveCount(0)
+    await expect(card.getByText("Live Sentence Translation")).toHaveCount(0)
     await expect(card.getByTestId("translation-line-meaning")).toHaveText("这是一句用于 OpenAI 模拟测试的中文译文。")
     await expect(card.getByTestId("translation-line-phonetic")).toHaveCount(0)
     await expect(card.getByTestId("translation-line-example")).toHaveCount(0)
     await expect(card.getByTestId("translation-risk-notice")).toBeVisible()
     await expect(card.getByTestId("translation-risk-notice")).toContainText("可能存在特殊表达")
     await attachScreenshot(page, testInfo, "e2e-openai-sentence-success")
+  })
+})
+
+test("translation card can be dragged from blank surface and remembers position", async ({}) => {
+  await runWithExtension(async ({ page }) => {
+    await setE2EMode(page, "openai_success")
+    const card = await openSentenceCard(page)
+    const before = await card.boundingBox()
+    if (!before) {
+      throw new Error("translation card bounding box missing before drag")
+    }
+
+    await page.mouse.move(before.x + 34, before.y + 14)
+    await page.mouse.down()
+    await page.mouse.move(before.x + 154, before.y + 94, { steps: 8 })
+    await page.mouse.up()
+
+    await expect
+      .poll(async () => {
+        const after = await card.boundingBox()
+        return after ? Math.round(after.x - before.x) : 0
+      })
+      .toBeGreaterThan(80)
+
+    const dragged = await card.boundingBox()
+    if (!dragged) {
+      throw new Error("translation card bounding box missing after drag")
+    }
+    await card.getByRole("button", { name: "Close translation card" }).click()
+
+    const reopened = await openSentenceCard(page)
+    const persisted = await reopened.boundingBox()
+    if (!persisted) {
+      throw new Error("translation card bounding box missing after reopen")
+    }
+
+    await expect(Math.abs(persisted.x - dragged.x)).toBeLessThan(16)
+    await expect(Math.abs(persisted.y - dragged.y)).toBeLessThan(16)
   })
 })
 

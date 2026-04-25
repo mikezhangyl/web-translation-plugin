@@ -1070,3 +1070,43 @@ Fix the risk-notice UI language so the caution text matches the target translati
 
 ### Result
 Success. The risk notice now matches the current `zh-CN` target-language surface.
+
+## Step 22
+
+### User Instruction
+```text
+当前的 UI 还是有点问题：
+1. UI 的字体偏大，这一看就不是一个专业的 app的字体和布局
+2. 左上角文字太多了，就叫 live translation 就可以了
+3. 你调用 skill 以及参考外部的成熟的 UI 设计
+4. 整个 UI 需要可以拖拽的，点击空白处可以拖动，并且记住位置
+```
+
+### Understanding
+Refine the translation card from an oversized, noisy panel into a compact professional popover, simplify the header copy, and add draggable positioning that persists across card reopenings.
+
+### Plan
+1. Use `frontend-design` and `tdd-workflow`.
+2. Reference mature popover guidance from Apple HIG and Material/Web popover patterns.
+3. Add failing E2E coverage for concise title and persisted drag position.
+4. Implement compact typography/layout and draggable `chrome.storage.local` position persistence.
+5. Update durable docs and validate.
+
+### Actions Taken
+- Added E2E assertions that the card title is `Live translation` and old title clutter is absent.
+- Added E2E coverage for dragging the card and reopening it at the persisted position.
+- Reduced card width, border radius, padding, shadow weight, and font sizes for a more compact popover.
+- Simplified the top-left header to one title: `Live translation`.
+- Added card drag handlers for non-interactive card surfaces.
+- Persisted the last card position under `translation.card.position` in `chrome.storage.local`.
+- Updated current product state and requirement timeline.
+
+### Validation
+- `npm run test:ui-logic`: PASS
+- `npm run build`: PASS
+- `npm run test:e2e:mock`: PASS
+- `npm run check:docs`: PASS
+- `npm run check:memory`: PASS
+
+### Result
+Success. The card now has a tighter app-like popover layout, concise header copy, and persistent draggable positioning.
