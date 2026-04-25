@@ -1142,3 +1142,31 @@ Create a PR for the pushed branch, inspect GitHub checks, and fix any CI issue f
 
 ### Result
 In progress. PR exists, and the CI failure has a targeted workflow fix ready to commit and push.
+
+## Step 24
+
+### User Instruction
+```text
+我们"on-request" 然后提权设置 prefix 把，
+```
+
+### Understanding
+Keep Codex in the safer `on-request` approval mode and avoid switching the project to `danger-full-access` just to reduce Git prompts. Document that recurring Git and verification operations should use narrow prefix approvals when an approval prompt appears.
+
+### Plan
+1. Preserve `.codex/config.toml` top-level `approval_policy = "on-request"` and `sandbox_mode = "workspace-write"`.
+2. Add repo-local guidance explaining prefix approval strategy.
+3. Update the active session log.
+4. Validate Codex and memory checks.
+
+### Actions Taken
+- Added comments to `.codex/config.toml` stating that repeated Git/test commands should use narrow persisted prefix approvals instead of full sandbox bypass.
+- Added an Approval Strategy section to `.codex/AGENTS.md`.
+- Added a root `AGENTS.md` working rule for the same policy.
+
+### Validation
+- `npm run check:codex`: PASS.
+- `npm run check:memory`: failed once because `codex/current-session.md` still pointed to next step 24 after this step was appended; updated the pointer to 25 and re-ran.
+
+### Result
+Success. The project policy now favors controlled `on-request` execution with narrow reusable prefix approvals.

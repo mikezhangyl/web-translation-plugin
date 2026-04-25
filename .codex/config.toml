@@ -14,7 +14,10 @@
 # built-in defaults. Uncomment and pin them only if you intentionally want
 # repo-local or global model overrides.
 
-# Top-level runtime settings (current Codex schema)
+# Top-level runtime settings (current Codex schema).
+# Keep the repo default in the controlled mode. For repeated Git/test commands,
+# use Codex approval prompts to persist narrow prefix approvals instead of
+# switching the whole project to danger-full-access.
 approval_policy = "on-request"
 sandbox_mode = "workspace-write"
 web_search = "live"

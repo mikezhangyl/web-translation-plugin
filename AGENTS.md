@@ -48,6 +48,7 @@ Repository-specific operating guide for `web-translation-plugin`.
 
 - Keep changes surgical and avoid unrelated refactors.
 - Validate behavior with concrete commands before closing work.
+- Keep Codex execution in `on-request` + `workspace-write` by default. For repeated Git or verification commands, use narrow approval prefix rules rather than switching the project to `danger-full-access`.
 - For provider or browser-platform changes, verify against primary docs before implementation.
 - For first-time provider or model-family work, follow `docs -> curl -> integration -> live E2E`.
 - For LLM invocation changes, do not edit product code first. This means changes to how this product calls a model, not changes to the model itself. If a request changes prompts, message layout, temperature, top-p/top-k or other sampling parameters, structured-output schema, model selection, provider routing, streaming mode, or expected semantic output, first run a provider probe with representative inputs and review the raw outputs with the user. Only implement after the desired invocation behavior is confirmed.

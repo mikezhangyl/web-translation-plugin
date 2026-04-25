@@ -8,6 +8,21 @@ This repository keeps Codex-specific settings in `.codex/` and repo-specific ope
 2. Use `.codex/config.toml` as the project-local Codex baseline.
 3. Use `.codex/agents/*.toml` for optional multi-agent delegation when the task benefits from focused read-only support.
 
+## Approval Strategy
+
+- Keep the default Codex profile at `approval_policy = "on-request"` and `sandbox_mode = "workspace-write"`.
+- Do not switch the project default to `danger-full-access` just to make Git easier.
+- When Git or verification commands need elevated access, request approval with a narrow reusable `prefix_rule`.
+- Prefer approving concrete recurring prefixes such as:
+  - `git switch`
+  - `git pull`
+  - `git push`
+  - `git commit`
+  - `npm run build`
+  - `npm run check:local`
+  - `npm run test:e2e:mock`
+- Treat destructive commands separately. Do not ask for broad reusable approval for `rm`, reset, clean, rebase, or force-push style operations.
+
 ## Local Role Set
 
 - `explorer`
