@@ -619,3 +619,526 @@ Implement the accepted harness architecture review fixes: make the Codex agent m
 
 ### Result
 Success. The Codex control layer is now schema-checked by the repo gate, the docs memory tree is staged, Playwright artifacts are ignored, and the full verification gate passes.
+
+## Step 9
+
+### User Instruction
+```text
+那让我们继续把，我们实现这个段落翻译的功能，让我看看我们搭建的 harness 有什么实际的效果
+```
+
+### Understanding
+Implement the first constrained paragraph-translation mode, keeping the accepted word and sentence paths intact while making the new behavior visible through the existing test and harness layers.
+
+### Plan
+1. Inspect the current selection rules, card rendering path, and test entrypoints.
+2. Add explicit paragraph-selection constraints and a user-visible card message for blocked selections.
+3. Add unit and mock-E2E coverage for the new limits and rerun the verification matrix, including live acceptance if configuration is available.
+4. Update the product memory docs to reflect the accepted paragraph constraints.
+
+### Actions Taken
+- Added explicit paragraph-selection support analysis in `lib/selection-ui.ts`, including:
+  - single-paragraph validation
+  - maximum `250` whitespace-delimited words
+  - maximum `1500` characters
+  - machine-readable rejection reasons for UI and tests
+- Updated `ui/selection-translator.tsx` so unsupported paragraph selections keep the translation card visible and show guidance instead of silently disappearing.
+- Prevented blocked paragraph selections from sending runtime translation requests.
+- Added unit coverage in `tests/selection-ui.test.ts` for accepted paragraph input, multi-paragraph rejection, and word-limit rejection.
+- Added mock browser regression coverage in `tests/e2e/selection-flow.spec.ts` to verify:
+  - the guidance card appears for oversized paragraph selections
+  - no translation request is sent for blocked selections
+  - troubleshooting logs capture the rejection reason
+- Updated the product and requirement memory docs to record the accepted paragraph constraints and timeline entry.
+
+### Validation
+- `npm run check:verify`: PASS
+- `npm run test:live`: PASS
+- Initial concurrent verification attempt exposed a Playwright artifact-directory collision when two Playwright suites were run in parallel against the same repo workspace; the paragraph-mode assertions themselves passed, and the full suite passed once rerun serially.
+
+### Result
+Success. Paragraph mode now has an explicit first interaction contract, blocked paragraph selections produce user-visible guidance instead of silent failure, and the harness demonstrates both the new guardrail behavior and a real operational lesson about Playwright artifact collisions under parallel local runs.
+
+## Step 10
+
+### User Instruction
+```text
+好,下一步继续。
+```
+
+### Understanding
+Start the vocabulary-history work on a dedicated feature branch and persist the first implementation-ready requirement and execution plan before writing product code.
+
+### Plan
+1. Create and switch to `codex/vocabulary-history`.
+2. Add the active vocabulary-history PRD and requirement changelog.
+3. Add the active execution plan with lightweight status tracking.
+4. Update active requirement and execution-plan indexes plus the global requirement timeline.
+5. Validate docs and memory checks before implementation starts.
+
+### Actions Taken
+- Created and switched to branch `codex/vocabulary-history`.
+- Added the active vocabulary-history requirement stream:
+  - `docs/requirements/active/vocabulary-history/PRD.md`
+  - `docs/requirements/active/vocabulary-history/CHANGELOG.md`
+- Added the active implementation plan:
+  - `docs/exec-plans/active/vocabulary-history.md`
+- Updated discovery and memory indexes:
+  - `docs/requirements/active/index.md`
+  - `docs/exec-plans/active/index.md`
+  - `docs/requirements/history/timeline.md`
+  - `docs/product-specs/current-state.md`
+- Corrected the session step number after `check:memory` caught a gap from Step 9 to Step 11.
+
+### Validation
+- `npm run check:docs`: PASS
+- `npm run check:memory`: PASS
+
+### Result
+Success. Vocabulary-history product requirements and execution plan are now persisted before implementation, and the active docs/memory gates pass.
+
+## Step 11
+
+### User Instruction
+```text
+好的,让我们开始执行吧。
+```
+
+### Understanding
+Start implementing the vocabulary-history feature from the committed planning branch, beginning with a tested storage and sorting contract before wiring product UI.
+
+### Plan
+1. Add failing logic tests for vocabulary normalization, de-duplicating saves, sorting, and deletion.
+2. Implement a `lib/vocabulary-history.ts` module around pure helpers and `chrome.storage.local`.
+3. Run the focused logic tests, then continue into UI wiring if the storage layer is stable.
+4. Update the active execution plan and session log as implementation milestones complete.
+
+### Actions Taken
+- Started implementation on `codex/vocabulary-history` with a clean worktree.
+- Added `lib/vocabulary-history.ts` as the storage boundary for local vocabulary entries, including:
+  - stable storage key
+  - normalized text de-duplication
+  - immutable upsert/delete helpers
+  - newest, oldest, A-Z, and Z-A sorting
+  - `chrome.storage.local` read/write helpers
+- Added `tests/vocabulary-history.test.ts` for storage key stability, normalization, duplicate updates, sorting, and deletion.
+- Added a flash-card-only "Save to notebook" action to the selection translation card.
+- Added popup vocabulary notebook UI with saved count, refresh, sorting, entry display, and delete actions.
+- Added mock browser coverage for saving a flash card, listing it in popup, sorting with a seeded entry, and deleting entries.
+- Fixed a card interaction bug discovered by E2E where inner card mouseup events reprocessed the page selection and reset save state.
+- Updated vocabulary-history requirement docs, product current-state, requirement timeline, and execution-plan status.
+
+### Validation
+- Initial `npm run test:ui-logic` under sandbox failed with `listen EPERM` from `tsx` IPC; reran with approved escalation.
+- `npm run test:ui-logic`: PASS
+- `npm run build`: PASS
+- `npx playwright test tests/e2e/selection-flow.spec.ts -g "flash-card vocabulary"`: PASS
+- `npm run test:e2e:mock`: PASS
+- `npm run check:local`: PASS, including:
+  - `check:codex`
+  - `check:docs`
+  - `check:memory`
+  - logic tests
+  - mock E2E
+  - live provider gate with 2 live E2E tests
+
+### Result
+Success. The first local vocabulary notebook slice is implemented and validated end-to-end.
+
+## Step 12
+
+### User Instruction
+```text
+就是你这个qwen flashcard 你切换到这个选项以后啊,对用户来说,这个model的url应该是写好的,好吗?你可以让用户改的,是至少填写好。 呃这从哪来呢,你可以把这个page信息,比方说模型名字啊,qwen的url放到一个 config文件里,就放到这个插件里面,明文的没关系。这样的话,用户就是你的程序可以读到了,好吗?
+```
+
+### Understanding
+Fix the Qwen Flash Card profile defaults so the non-secret model URL and model name are built into the plugin, not dependent on `.env.local`, while keeping the API key user-provided or explicitly saved.
+
+### Plan
+1. Add built-in Qwen profile constants for base URL and model.
+2. Use those constants in popup defaults, Qwen profile normalization, and runtime dependency construction.
+3. Add regression tests proving Qwen defaults work without `QWEN_BASE_URL`.
+4. Run focused validation and update docs/session memory.
+
+### Actions Taken
+- Added built-in Qwen Flash Card defaults in `lib/translation-settings.ts`:
+  - `DEFAULT_QWEN_BASE_URL`
+  - `DEFAULT_QWEN_FLASH_MODEL`
+- Updated Qwen profile normalization so blank base URL is filled from the built-in DashScope compatible-mode URL.
+- Updated background env-default response and Qwen runtime dependency construction to use the built-in base URL when `QWEN_BASE_URL` is absent.
+- Updated popup fallback code to use the shared Qwen flash model constant.
+- Added regression coverage for missing `QWEN_BASE_URL` and Qwen profile default normalization.
+- Updated product current-state docs with the built-in Qwen profile contract.
+
+### Validation
+- `npm run test:ui-logic`: PASS
+- `npm run build`: PASS
+
+### Result
+Success. `Qwen Flash Card` now has a built-in model URL and model name; users only need to supply/save the API key for the common path.
+
+## Step 13
+
+### User Instruction
+```text
+现在让我们做个优化啊,现在那个翻译的那个小圆点一直出现在选中文字的右下方,点起来不方便,我想让这个小圆点始终出现在鼠标位置的上方,不要遮盖所选的文字和左选的文字,这个做得到吗?
+```
+
+### Understanding
+Change the selection marker placement from the selected text rectangle's lower-right corner to a position above the user's mouse location, while preserving viewport clamping and fallback behavior for keyboard/scroll-driven selection updates.
+
+### Plan
+1. Add a tested pure helper for pointer-based marker placement above the pointer.
+2. Pass mouse coordinates from `mouseup` into selection processing.
+3. Keep rectangle-based placement as fallback when no pointer position is available.
+4. Run logic tests and build.
+
+### Actions Taken
+- Started marker-position optimization.
+- Added `computeMarkerPositionFromPointer` in `lib/selection-ui.ts`.
+- Added unit coverage proving pointer-based marker placement appears above the pointer and clamps near viewport edges.
+- Updated `ui/selection-translator.tsx` so mouse selection updates pass `mouseup.clientX/clientY` into marker placement.
+- Preserved rectangle-based marker placement as fallback for keyboard, resize, and scroll-driven selection updates.
+- Removed the unused rectangle-only marker helper from the content UI module.
+- Added `DOT_POINTER_EXTRA_TOP_OFFSET = 3` to move the pointer-based marker an additional 3px upward after visual review.
+
+### Validation
+- `npm run test:ui-logic`: PASS
+- `npm run build`: PASS
+- `npm run test:e2e:mock`: PASS
+
+### Result
+Success. The marker now appears slightly above the mouse position for mouse-driven selections while keeping existing fallback behavior.
+
+## Step 14
+
+### User Instruction
+```text
+现在我发现一个问题啊,就是有的英语翻译啊,它的原文啊,其实除了字面的表面意思,其实还有真正的一层意思。 比方说刚才我翻译的就是叫什么coffee badging,这个词不能单从字面意思去翻。 所以我在想是不是修改一下提示词,可以改给两种翻译,一种是把里面的就是用自然的方式去翻,而不是字面直翻,知道吧?但是如果检测到里面有需要不能用字面直翻的词汇和词汇,在下面要有注解,为什么这个东西在这个词汇在比方说英语里面常用来表达什么什么什么?你懂我意思吗?
+```
+
+### Understanding
+Improve flash-card translation for idioms, workplace slang, cultural expressions, and other phrases where literal translation is misleading. The card should prioritize natural Chinese meaning, optionally show literal translation, and include an explanatory usage note when needed.
+
+### Plan
+1. Extend the flash-card contract with optional `literal` and `note` fields.
+2. Update the prompt to request natural translation first, literal translation when useful, and usage notes for non-literal expressions.
+3. Render and persist the new fields in the card, vocabulary history, and popup.
+4. Add tests before implementation and validate logic/build paths.
+
+### Actions Taken
+- Started flash-card semantic note enhancement.
+- Extended `TranslationCard` with optional `literal` and `note` fields.
+- Updated the Qwen flash-card prompt so `meaning` asks for natural Simplified Chinese semantics instead of word-by-word literal translation.
+- Added prompt instructions for:
+  - optional literal translation
+  - usage notes for idioms, slang, cultural expressions, domain-specific phrases, and misleading literal translations
+- Updated flash-card parsing, partial streaming parsing, normalized card text construction, and vocabulary persistence for the new fields.
+- Updated the translation card UI to show literal translation and a highlighted usage note when present.
+- Updated popup vocabulary history rendering to preserve and show literal/note fields.
+- Added regression tests for `coffee badging`-style non-literal phrases and vocabulary persistence.
+- Updated product/requirement memory docs.
+
+### Validation
+- `npm run test:ui-logic`: PASS
+- `npm run build`: PASS
+- `npm run test:e2e:mock`: PASS
+
+### Result
+Success. Flash-card translation now prioritizes natural meaning and can explain non-literal English expressions with optional literal translation and usage notes.
+
+## Step 15
+
+### User Instruction
+```text
+我比较在乎的是,我们下一次遇到类似情况,你会怎么样采取我们刚才说的正确的方式,我们是不是或者怎样把Harness的那个相关的一些规定再重新再添加一下。
+```
+
+### Understanding
+Persist a repo-level harness rule so future LLM invocation changes are not implemented directly in product code before provider-level prompt/parameter probing has produced acceptable evidence.
+
+### Plan
+1. Add a concise mandatory rule to `AGENTS.md`.
+2. Expand provider workflow docs with the prompt/parameter probe-first sequence.
+3. Validate docs and memory checks.
+
+### Actions Taken
+- Added a repo-level rule to `AGENTS.md`: LLM invocation changes must run provider probes before product-code edits.
+- Expanded `docs/references/provider-workflow-lessons.md` with a prompt/parameter change gate covering:
+  - prompt edits
+  - temperature/sampling changes
+  - structured-output schema changes
+  - model selection/routing
+  - expected semantic output changes such as idiom handling and translation policy
+- Defined the required sequence: representative inputs, direct provider probe, raw output capture, user confirmation for subjective semantics, then implementation.
+
+### Validation
+- `npm run check:docs`: PASS
+- `npm run check:memory`: PASS
+
+### Result
+Success. Future prompt/parameter/semantic LLM invocation changes now have a durable probe-first harness rule.
+
+## Step 16
+
+### User Instruction
+```text
+请你多改动吧,把它纠正过来。
+```
+
+### Understanding
+Correct the harness terminology from the ambiguous "LLM behavior change" to the more precise "LLM invocation change", making clear that the product changes how it calls and interprets the model rather than changing the model itself.
+
+### Plan
+1. Update `AGENTS.md` wording.
+2. Rename and clarify the reference section in `docs/references/provider-workflow-lessons.md`.
+3. Update session memory and validate docs/memory checks.
+
+### Actions Taken
+- Replaced "LLM behavior changes" with "LLM invocation changes" in repo-level working rules.
+- Clarified that invocation changes cover product-side prompts, message layout, sampling parameters, schemas, model selection, routing, streaming mode, and expected semantic output.
+- Clarified that these rules do not mean changing the underlying model itself.
+- Updated provider workflow wording from prompt quality to invocation quality where relevant.
+
+### Validation
+- `npm run check:docs`: PASS
+- `npm run check:memory`: PASS
+
+### Result
+Success. Harness terminology now uses "LLM invocation changes" and explicitly scopes the rule to product-side model calls and response interpretation.
+
+## Step 17
+
+### User Instruction
+```text
+把这个前置commit掉,然后我们就开始测试一下,好吧,这个新的prompt。我刚才对结果问完,你告诉我,你测试结果需要是一个简单的一个plain text文档,里面输出就是prompt是什么,对吧,测试数据是什么,然后输出结果是什么,好吧。
+```
+
+### Understanding
+Commit the probe-first harness rule separately, then run a real provider prompt probe and save a simple plain text report containing the prompt, test data, provider output, and assessment.
+
+### Plan
+1. Commit only the harness rule files, leaving unconfirmed prompt/product code uncommitted.
+2. Run a real Qwen provider probe with the candidate prompt and representative inputs.
+3. Save the prompt, test data, outputs, and assessment as a plain text document.
+4. Validate docs and memory checks.
+
+### Actions Taken
+- Created commit `44797e0 docs: require provider probes for llm invocation changes`.
+- Ran a real Qwen `qwen-mt-flash` provider probe with:
+  - `coffee badging`
+  - the full MS Teams/HR sentence containing `coffee badging`
+  - `performance`
+  - a normal project-progress sentence
+- Saved probe results to `docs/references/coffee-badging-prompt-probe-2026-04-24.txt`.
+- Marked the candidate prompt as failed because it misunderstood `coffee badging` and produced noisy notes for ordinary inputs.
+
+### Validation
+- `npm run check:docs`: PASS
+- `npm run check:memory`: PASS
+
+### Result
+Success. The first real provider prompt probe is captured in a plain text report and the candidate prompt is explicitly marked as failed.
+
+## Step 18
+
+### User Instruction
+```text
+OK,那么这个模型翻译输出的数据里面有没有可信度,confidence,你试试看。
+```
+
+### Understanding
+Probe the real Qwen provider response to determine whether confidence is available as a native response field, whether `logprobs` is supported, and whether a prompt-requested `confidence` value is merely self-reported.
+
+### Plan
+1. Run direct provider probes without changing product code.
+2. Test default response metadata, `logprobs`, and prompt-requested confidence.
+3. Save the raw request/output summary as a plain text reference report.
+4. Validate docs and memory checks.
+
+### Actions Taken
+- Started confidence probe.
+- Ran three real Qwen `qwen-mt-flash` probes:
+  - default translation response
+  - `logprobs: true` response
+  - prompt-requested self-reported `confidence`
+- Observed that default responses have no semantic confidence field.
+- Observed that token-level `logprobs` can be returned but were high for the wrong literal translation `咖啡徽章`.
+- Observed that prompt-requested self-reported confidence returned `0.95` for the wrong literal translation.
+- Saved the plain text report to `docs/references/qwen-confidence-probe-2026-04-24.txt`.
+
+### Validation
+- `npm run check:docs`: PASS
+- `npm run check:memory`: PASS
+
+### Result
+Success. Qwen does not expose a trustworthy semantic confidence score; self-reported confidence and token logprobs are not reliable indicators of translation correctness.
+
+## Step 19
+
+### User Instruction
+```text
+那么你把你测试一个prompt,对吧,在这个MT的模型翻译以后,你能够自己review一下自己的模型,对吧,然后把可疑的词汇指出来,看它有没有这种能力。
+```
+
+### Understanding
+Run a provider probe without changing product code to test whether the MT model can translate first and then review its own translation for suspicious slang, idioms, domain terms, or misleading literal translations.
+
+### Plan
+1. Use the current Qwen provider credentials from `.env.local`.
+2. Run a two-stage probe: translation first, then same-model self-review using source plus machine translation.
+3. Test `coffee badging`, an ordinary sentence, business/domain terminology, and a common idiom.
+4. Save the prompt, test data, raw outputs, and conclusion as a plain text reference report.
+
+### Actions Taken
+- Attempted the probe with `system` messages and observed that Qwen MT compatible API rejects `system` role for this model family.
+- Re-ran the probe using a single `user` message containing instructions and input.
+- Tested both `qwen-mt-flash` and `qwen-mt-plus`.
+- Saved the report to `docs/references/qwen-mt-self-review-probe-2026-04-24.txt`.
+- Added the probe report to `docs/references/index.md`.
+
+### Validation
+- `npm run check:docs`: PASS
+- `npm run check:memory`: PASS
+
+### Result
+Success. The model can surface candidate risky expressions, but the probe shows self-review is not reliable enough as a source of truth because `qwen-mt-flash` flagged `coffee badging` while explaining it incorrectly.
+
+## Step 20
+
+### User Instruction
+```text
+我看了结果,它确实还不错,就是虽然那些俚语没有被正确翻译,但是至少能够识别出那些翻译可能会造成误解的那些俚语,那么我们就可以在界面上这么做,就是上面正常显示翻译,下面显示一个提示,这这这单词可能是一个就是特殊词汇或者俚语,再次翻译可能不准确,对吧,我就希望这样做就可以了
+```
+
+### Understanding
+Implement sentence-level risk notices based on the confirmed provider probe: keep the normal translation as the primary output, then show a caution below it when the MT self-review flags possible slang, idioms, domain terms, or misleading literal translations.
+
+### Plan
+1. Add tests first for service response risk notices and UI display in mock E2E.
+2. Add a `riskNotices` response field and Qwen MT self-review pass for sentence translations.
+3. Render a non-authoritative warning below sentence translations when notices exist.
+4. Update durable product and requirement memory.
+5. Validate with unit/UI logic tests, build, mock E2E, docs, and memory checks.
+
+### Actions Taken
+- Added `TranslationRiskNotice` and optional `riskNotices` to translation responses.
+- Added a second Qwen MT self-review request after successful non-flash-card Qwen sentence translations.
+- Parsed `suspicious_terms` into safe warning notices.
+- Made review failures non-blocking so the main translation still succeeds.
+- Added a sentence-card warning block below the main translation.
+- Tightened the warning display after live probing showed Qwen can flag `coffee badgers` while still explaining it incorrectly; the UI now avoids presenting the model's proposed meaning as fact.
+- Updated mock E2E provider behavior to exercise the warning path.
+- Added a new `translation-risk-notices` requirement stream and updated current product state plus timeline.
+
+### Validation
+- `npm run test:ui-logic`: PASS
+- `npm run build`: PASS
+- `npm run test:e2e:mock`: PASS
+- Live Qwen service probe: PASS for integration path; returned one `riskNotice` for `coffee badgers`, but with an unreliable explanation, confirming the UI should remain caution-only.
+- `npm run check:docs`: PASS
+- `npm run check:memory`: PASS
+
+### Result
+Success. Product behavior now matches the requested design: normal translation remains primary, and model self-review only adds a cautionary special-expression warning when suspicious terms are detected.
+
+## Step 21
+
+### User Instruction
+```text
+现在的提示非常不错， 但是语言是英语的， 这个 caution 应该是和目标翻译语言保持一致。
+```
+
+### Understanding
+Fix the risk-notice UI language so the caution text matches the target translation language. The current product target is `zh-CN`, so the warning should be in Simplified Chinese.
+
+### Plan
+1. Update the E2E assertion to expect Chinese risk-notice copy.
+2. Change the UI risk-notice title, body, and per-expression line to Chinese.
+3. Validate build, mock E2E, and session memory.
+
+### Actions Taken
+- Updated the mock E2E expectation from `Possible special expression` to `可能存在特殊表达`.
+- Replaced the risk-notice UI copy with Simplified Chinese.
+- Kept the warning caution-only and did not expose the model's guessed explanation as fact.
+
+### Validation
+- `npm run build`: PASS
+- `npm run test:e2e:mock`: PASS
+- `npm run check:memory`: PASS
+
+### Result
+Success. The risk notice now matches the current `zh-CN` target-language surface.
+
+## Step 22
+
+### User Instruction
+```text
+当前的 UI 还是有点问题：
+1. UI 的字体偏大，这一看就不是一个专业的 app的字体和布局
+2. 左上角文字太多了，就叫 live translation 就可以了
+3. 你调用 skill 以及参考外部的成熟的 UI 设计
+4. 整个 UI 需要可以拖拽的，点击空白处可以拖动，并且记住位置
+```
+
+### Understanding
+Refine the translation card from an oversized, noisy panel into a compact professional popover, simplify the header copy, and add draggable positioning that persists across card reopenings.
+
+### Plan
+1. Use `frontend-design` and `tdd-workflow`.
+2. Reference mature popover guidance from Apple HIG and Material/Web popover patterns.
+3. Add failing E2E coverage for concise title and persisted drag position.
+4. Implement compact typography/layout and draggable `chrome.storage.local` position persistence.
+5. Update durable docs and validate.
+
+### Actions Taken
+- Added E2E assertions that the card title is `Live translation` and old title clutter is absent.
+- Added E2E coverage for dragging the card and reopening it at the persisted position.
+- Reduced card width, border radius, padding, shadow weight, and font sizes for a more compact popover.
+- Simplified the top-left header to one title: `Live translation`.
+- Added card drag handlers for non-interactive card surfaces.
+- Persisted the last card position under `translation.card.position` in `chrome.storage.local`.
+- Updated current product state and requirement timeline.
+
+### Validation
+- `npm run test:ui-logic`: PASS
+- `npm run build`: PASS
+- `npm run test:e2e:mock`: PASS
+- `npm run check:docs`: PASS
+- `npm run check:memory`: PASS
+
+### Result
+Success. The card now has a tighter app-like popover layout, concise header copy, and persistent draggable positioning.
+
+## Step 23
+
+### User Instruction
+```text
+就按照你说的做
+```
+
+### Understanding
+Create a PR for the pushed branch, inspect GitHub checks, and fix any CI issue found before handing the PR back.
+
+### Plan
+1. Create a PR from `codex/vocabulary-history` to `main`.
+2. Check PR status with GitHub CLI.
+3. Inspect failed checks.
+4. Patch CI if the failure is workflow/environment-related.
+5. Commit and push the fix, then re-check PR status.
+
+### Actions Taken
+- Created PR `#1`: `feat: Add vocabulary history and translation UX`.
+- Checked PR checks and found `mock-e2e` failing.
+- Inspected the failed GitHub Actions log.
+- Diagnosed the failure as a CI environment issue: Playwright launches headed Chromium for extension tests, but the Ubuntu runner has no X server.
+- Updated `.github/workflows/mock-e2e.yml` to run the mock E2E suite under `xvfb-run --auto-servernum`.
+
+### Validation
+- `npm run check:docs`: PASS
+- `npm run check:memory`: PASS
+- Pending commit, push, and PR check refresh after this log update.
+
+### Result
+In progress. PR exists, and the CI failure has a targeted workflow fix ready to commit and push.

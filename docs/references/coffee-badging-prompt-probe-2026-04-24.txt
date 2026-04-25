@@ -1,0 +1,90 @@
+Prompt Probe: coffee badging semantic translation
+Date: 2026-04-24
+Provider: Qwen OpenAI-compatible endpoint
+Model: qwen-mt-flash
+Temperature: 0.2
+Status: failed
+
+Goal
+Test whether the candidate flash-card prompt can produce natural meaning, literal translation, and usage notes for non-literal English expressions such as "coffee badging" before committing the prompt into product behavior.
+
+Prompt
+You are a translation expert for English learners. Return strict JSON only. Use exactly these keys: phonetic, meaning, literal, note, example. phonetic is required. phonetic: IPA string for the English word or phrase. Never leave it empty. For short phrases, provide best-effort IPA for the phrase or its key word. meaning: concise natural Simplified Chinese meaning. Prefer idiomatic semantic translation over word-by-word literal translation. literal: short Simplified Chinese literal translation when it helps explain the phrase; use "" when not useful. note: concise explanation when the phrase is idiomatic, slang, cultural, domain-specific, or misleading if translated literally; explain what it commonly means in English. Use "" for ordinary literal words. example: one short example sentence followed by its Simplified Chinese translation on the same line, separated by " — ".
+
+Test Data 1
+coffee badging
+
+Output 1
+{
+  "phonetic": "/ˈkɔːfi bædɪŋ/",
+  "meaning": "指在咖啡店或餐厅中，通过某种方式（如使用特定的杯子、贴纸等）来区分顾客的身份或等级。",
+  "literal": "",
+  "note": "这是一个英语中的俚语表达，通常用于描述一种非正式的、带有幽默感的社交行为。它并不意味着真正的‘徽章’，而是指一种象征性的身份标识。",
+  "example": "He got coffee badging at the local café — 他在当地咖啡馆获得了‘咖啡徽章’，表示他经常光顾这家店。"
+}
+
+Assessment 1
+Failed. The model interpreted the phrase as a coffee shop/customer identity expression. Expected meaning is the hybrid-workplace practice of briefly appearing at the office to satisfy attendance/visibility expectations before leaving or working elsewhere.
+
+Test Data 2
+Just a heads up to any coffee badgers - MS Teams is reporting your location activity and it is being actively monitored by HR. If you are coffee badging, you will be caught and once enough data is available for a "for cause termination", you will be fired without warning/notice.
+
+Output 2
+{
+  "phonetic": "/dʒʌst ə hɛdz ʌp tu ˈeɪni kɒfi ˈbædʒəz — ɛm ɛs ˈtiz ɪz ˈrɪpɔːrtɪŋ jɔːr ləkˈkeɪʃən ækˈtɪvɪti ænd ɪt ɪz bɪŋ ˈæk.tɪv.li mən.ɪ.tərd baɪ ɛɪʧ ɑːr/",
+  "meaning": "提醒一下那些喜欢偷喝咖啡的人——微软Teams正在记录你的位置活动，人力资源部门也在积极监控。如果你被发现偷喝咖啡，一旦收集到足够多的证据，就可能被以‘正当理由解雇’为由开除，而且不会提前通知。",
+  "literal": "只是给所有偷喝咖啡的人提个醒——微软Teams正在报告你的位置活动，并且HR正在积极监控。如果你偷喝咖啡，就会被抓住，一旦有足够的数据支持‘有正当理由解雇’，你就会被无预警地开除。",
+  "note": "这个短语是俚语，指在工作场所偷偷喝咖啡的行为。如果直译成‘偷喝咖啡’，可能会让人误解为一种不道德或违法的行为，但实际上它更多是一种职场文化中的小习惯。这种行为通常不会导致严重后果，但若被发现，可能会引发不必要的麻烦。",
+  "example": "Just a heads up to any coffee badgers — MS Teams is reporting your location activity and it is being actively monitored by HR. If you are coffee badging, you will be caught and once enough data is available for a 'for cause termination', you will be fired without warning/notice. — 提醒一下那些喜欢偷喝咖啡的人——微软Teams正在记录你的位置活动，人力资源部门也在积极监控。如果你被发现偷喝咖啡，一旦收集到足够多的证据，就可能被以‘有正当理由解雇’为由开除，而且不会提前通知。"
+}
+
+Assessment 2
+Failed. The model again interpreted the expression as "secretly drinking coffee". It also tried to generate IPA for a full sentence, which is undesirable for sentence-level translation.
+
+Test Data 3
+performance
+
+Output 3
+{
+  "phonetic": "/pərˈfɔːrməns/",
+  "meaning": "表现；演出",
+  "literal": "表演，执行",
+  "note": "在英语中，performance通常指某人在特定场合下的表现或展示，可以是艺术表演、工作表现等。它不一定是字面意义上的‘表演’。",
+  "example": "Her performance in the play was outstanding — 她在这部戏中的表现非常出色。"
+}
+
+Assessment 3
+Partially failed. The meaning is acceptable, but the prompt caused an unnecessary note for an ordinary word. Ordinary words should usually keep note empty.
+
+Test Data 4
+This is a normal sentence about project progress.
+
+Output 4
+{
+  "phonetic": "/ðɪs ɪz ə ˈnɔːr.məl ˈsɛnt.əns əˈbaʊt ˈprɒ.dʒɛkt ˈprɒ.sɛs/",
+  "meaning": "这是一句关于项目进展的正常句子。",
+  "literal": "这是一句关于项目进展的普通句子。",
+  "note": "该短语在英语中是常规表达，没有特殊含义或文化背景。",
+  "example": "This is a normal sentence about project progress — 这是一句关于项目进展的正常句子。"
+}
+
+Assessment 4
+Failed for product behavior. A normal sentence should not be forced into flash-card shape with phonetic/literal/note fields. This confirms sentence and flash-card behavior need separate invocation contracts.
+
+Overall Result
+The candidate prompt should not be implemented as-is.
+
+Problems Found
+1. It does not know or infer the workplace meaning of "coffee badging".
+2. It adds notes to ordinary words and ordinary sentences.
+3. It treats sentence inputs like flash-card phrase inputs.
+4. It proves that parser/UI mocks are not enough for prompt quality.
+
+Next Probe Direction
+Test a stricter two-lane invocation design:
+1. Flash-card lane for word or short phrase only.
+2. Sentence lane returns plain sentence translation plus optional key expression notes.
+
+For "coffee badging", the prompt likely needs either:
+1. stronger disambiguation instructions for workplace/hybrid-work slang, or
+2. a glossary/context injection path for known emerging expressions.

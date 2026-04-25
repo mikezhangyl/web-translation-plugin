@@ -4,8 +4,12 @@ import assert from "node:assert/strict"
 import {
   buildDryRunTranslation,
   clamp,
+  computeMarkerPositionFromPointer,
   computeMarkerPositionFromRect,
+  getSelectionSupport,
   isFlashCardSelection,
+  MAX_SUPPORTED_SELECTION_LENGTH,
+  MAX_SUPPORTED_SELECTION_WORDS,
   isSupportedSelection
 } from "../lib/selection-ui"
 
@@ -22,7 +26,39 @@ test("selection classification distinguishes flash-card text from sentence text"
   assert.equal(isFlashCardSelection("x".repeat(49)), false)
   assert.equal(isSupportedSelection("This is a full sentence that should still be translated."), true)
   assert.equal(isSupportedSelection(""), false)
-  assert.equal(isSupportedSelection("x".repeat(361)), false)
+  assert.equal(isSupportedSelection("x".repeat(MAX_SUPPORTED_SELECTION_LENGTH + 1)), false)
+})
+
+test("selection support allows a single paragraph within the accepted limits", () => {
+  const text = "This is a single paragraph selection that should stay within the first paragraph-mode limits."
+  const result = getSelectionSupport(text)
+
+  assert.equal(result.supported, true)
+  assert.equal(result.reason, null)
+  assert.equal(result.textLength, text.length)
+  assert.equal(result.wordCount, 14)
+  assert.equal(result.paragraphCount, 1)
+})
+
+test("selection support rejects multiple paragraphs", () => {
+  const result = getSelectionSupport("First paragraph.\n\nSecond paragraph.")
+
+  assert.equal(result.supported, false)
+  assert.equal(result.reason, "multiple_paragraphs")
+  assert.equal(result.paragraphCount, 2)
+})
+
+test("selection support rejects paragraph selections that exceed the word limit", () => {
+  const longParagraph = Array.from(
+    { length: MAX_SUPPORTED_SELECTION_WORDS + 1 },
+    (_, index) => `word${index}`
+  ).join(" ")
+
+  const result = getSelectionSupport(longParagraph)
+
+  assert.equal(result.supported, false)
+  assert.equal(result.reason, "too_long")
+  assert.equal(result.wordCount, MAX_SUPPORTED_SELECTION_WORDS + 1)
 })
 
 test("computeMarkerPositionFromRect returns null for empty rect", () => {
@@ -41,6 +77,24 @@ test("computeMarkerPositionFromRect clamps marker to viewport", () => {
   )
 
   assert.deepEqual(pos, { left: 1176, top: 776 })
+})
+
+test("computeMarkerPositionFromPointer places marker above the pointer", () => {
+  const pos = computeMarkerPositionFromPointer(
+    { x: 300, y: 240 },
+    { width: 1200, height: 800 }
+  )
+
+  assert.deepEqual(pos, { left: 292, top: 213 })
+})
+
+test("computeMarkerPositionFromPointer clamps marker near viewport edges", () => {
+  const pos = computeMarkerPositionFromPointer(
+    { x: 3, y: 4 },
+    { width: 1200, height: 800 }
+  )
+
+  assert.deepEqual(pos, { left: 8, top: 8 })
 })
 
 test("buildDryRunTranslation returns expected shape and preserves source word", () => {

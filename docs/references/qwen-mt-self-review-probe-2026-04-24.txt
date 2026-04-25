@@ -1,0 +1,212 @@
+# MT self-review suspicious-term probe
+
+Generated: 2026-04-24T10:15:33.731Z
+Provider base URL: https://dashscope.aliyuncs.com/compatible-mode
+Models: qwen-mt-flash, qwen-mt-plus
+
+## Assessment
+
+Result: partially useful, not reliable enough as a correctness source.
+
+The two-stage pattern can surface candidate risky expressions, but the model should not be trusted to explain them correctly:
+
+- qwen-mt-flash flagged "coffee badgers" but explained it incorrectly as people frequently drinking coffee or leaving the workstation.
+- qwen-mt-plus correctly recognized "coffee badgers" as workplace slang, but still gave an incomplete explanation: it framed the behavior as pretending to drink coffee to avoid work rather than the more precise hybrid-work behavior of briefly showing up or badging in to appear present.
+- Both models avoided false positives on the ordinary weather sentence.
+- qwen-mt-flash flagged business/domain terms such as "product-market fit" and "burn rate"; qwen-mt-plus did not, so sensitivity is inconsistent across models.
+- Both models identified "kicked the can down the road" as idiomatic.
+
+Product implication: self-review can be used as a candidate detection stage, not as final truth. Any flagged expression should be shown with uncertainty or sent through a stronger explanation/glossary lookup path before becoming user-facing canonical guidance.
+
+## Translation prompt
+
+Translate the following English text into natural Simplified Chinese. Return only the translation. Do not add explanations.
+
+TEXT:
+
+
+## Review prompt
+
+You are reviewing an English-to-Simplified-Chinese machine translation for an English learner.
+Return strict JSON only with this shape:
+{
+  "suspicious_terms": [
+    {"source":"...", "translation":"...", "reason":"...", "suggested_meaning":"...", "risk":"low|medium|high"}
+  ],
+  "overall_assessment":"..."
+}
+Flag only expressions that may be slang, idioms, neologisms, domain terms, metaphors, or misleading literal translations. If nothing is suspicious, return an empty array. Do not invent issues for ordinary literal text.
+
+
+
+## Test data and outputs
+
+### Model: qwen-mt-flash
+
+#### Sample: coffee-badging-hr
+
+Source:
+Just a heads up to any coffee badgers - MS Teams is reporting your location activity and it is being actively monitored by HR. If you are coffee badging, you will be caught and once enough data is available for a "for cause termination", you will be fired without warning/notice.
+
+Translation output:
+提醒各位“咖啡打卡”者：MS Teams 正在记录您的位置活动，且该行为正被人力资源部门实时监控。若您存在“咖啡打卡”行为，一旦被查实，且积累的证据足以构成“因严重违纪而解雇”的情形，您将被直接解雇，且无需提前通知或补偿。
+
+Self-review output:
+{
+  "suspicious_terms": [
+    {
+      "source": "coffee badgers",
+      "translation": "咖啡打卡者",
+      "reason": "该表达在中文中没有直接对应的常用说法，可能引起误解。",
+      "suggested_meaning": "指那些经常在工作时间喝咖啡、频繁离开工作岗位的人。",
+      "risk": "medium"
+    }
+  ],
+  "overall_assessment": "整体翻译较为准确，但‘coffee badgers’这一表达需要更贴近中文语境的解释。"
+}
+
+#### Sample: ordinary-weather
+
+Source:
+The weather is nice today, so I walked to the library after lunch.
+
+Translation output:
+今天天气很好，所以我午饭后步行去了图书馆。
+
+Self-review output:
+{
+  "suspicious_terms": [],
+  "overall_assessment": "整体翻译准确，无可疑术语。"
+}
+
+#### Sample: business-domain
+
+Source:
+The startup pivoted after product-market fit stalled, but its burn rate still worried investors.
+
+Translation output:
+这家初创公司在产品与市场契合度陷入停滞后进行了业务转型，但其烧钱速度仍令投资者担忧。
+
+Self-review output:
+{
+  "suspicious_terms": [
+    {
+      "source": "product-market fit",
+      "translation": "产品与市场契合度",
+      "reason": "这是一个商业术语，直接翻译为“产品与市场契合度”是准确的，但可能对非专业人士不够直观。",
+      "suggested_meaning": "指产品是否满足市场需求的程度",
+      "risk": "medium"
+    },
+    {
+      "source": "burn rate",
+      "translation": "烧钱速度",
+      "reason": "这是一个金融领域的专业术语，直接翻译为“烧钱速度”是准确的，但可能对普通读者不够熟悉。",
+      "suggested_meaning": "指公司消耗现金的速度",
+      "risk": "medium"
+    }
+  ],
+  "overall_assessment": "整体来看，这段文字没有明显的俚语、习语或误导性直译问题。"
+}
+
+#### Sample: idiom
+
+Source:
+The manager kicked the can down the road instead of making a hard decision.
+
+Translation output:
+经理把问题推给了别人，而不是做出艰难的决定。
+
+Self-review output:
+{
+  "suspicious_terms": [
+    {
+      "source": "kicked the can down the road",
+      "translation": "把问题推给了别人",
+      "reason": "这是一个英语习语，表示拖延或回避问题，直接翻译成‘把问题推给了别人’虽然意思相近，但不够生动和地道。",
+      "suggested_meaning": "拖延或回避问题",
+      "risk": "medium"
+    }
+  ],
+  "overall_assessment": "整体上，这段翻译基本准确，但存在一个可能的俚语表达需要调整。"
+}
+
+### Model: qwen-mt-plus
+
+#### Sample: coffee-badging-hr
+
+Source:
+Just a heads up to any coffee badgers - MS Teams is reporting your location activity and it is being actively monitored by HR. If you are coffee badging, you will be caught and once enough data is available for a "for cause termination", you will be fired without warning/notice.
+
+Translation output:
+提醒各位“咖啡打卡”的同事：Microsoft Teams 正在记录您的位置活动，并且 HR 会对此进行实时监控。如果您还在用“咖啡打卡”这种方式，迟早会被发现；一旦积累到足够证据构成“正当解雇理由”，您将被立即解雇，无需提前通知或警告。
+
+Self-review output:
+{
+  "suspicious_terms": [
+    {
+      "source": "coffee badgers",
+      "translation": "咖啡打卡",
+      "reason": "此短语为职场俚语，指员工假装去喝咖啡以逃避工作或记录虚假出勤时间，直接翻译可能让非英语母语者感到困惑。",
+      "suggested_meaning": "假装去喝咖啡以逃避工作的人",
+      "risk": "medium"
+    },
+    {
+      "source": "for cause termination",
+      "translation": "正当解雇理由",
+      "reason": "此短语为法律术语，直译可能不够准确，且对普通学习者来说较为生僻。",
+      "suggested_meaning": "因特定原因的解雇",
+      "risk": "high"
+    }
+  ],
+  "overall_assessment": "整体翻译较为准确，但存在两处需要关注的表达：一是‘coffee badgers’的翻译，二是‘for cause termination’的处理。建议在正式场合使用时，可适当调整措辞以更贴近目标受众的理解。"
+}
+
+#### Sample: ordinary-weather
+
+Source:
+The weather is nice today, so I walked to the library after lunch.
+
+Translation output:
+今天天气不错，午饭后我就步行去了图书馆。
+
+Self-review output:
+{
+  "suspicious_terms": [],
+  "overall_assessment": "整体翻译准确，未发现可疑术语。"
+}
+
+#### Sample: business-domain
+
+Source:
+The startup pivoted after product-market fit stalled, but its burn rate still worried investors.
+
+Translation output:
+这家初创公司在产品与市场匹配受阻后进行了转型，但其烧钱速度仍令投资者担忧。
+
+Self-review output:
+{
+  "suspicious_terms": [],
+  "overall_assessment": "整体翻译准确，未发现可疑术语或表达。"
+}
+
+#### Sample: idiom
+
+Source:
+The manager kicked the can down the road instead of making a hard decision.
+
+Translation output:
+经理把问题一拖再拖，而不是做出艰难的决定。
+
+Self-review output:
+{
+  "suspicious_terms": [
+    {
+      "source": "kicked the can down the road",
+      "translation": "把问题一拖再拖",
+      "reason": "This is an idiomatic expression in English that doesn't have a direct, literal equivalent in Chinese. The phrase implies delaying a difficult decision rather than addressing it immediately.",
+      "suggested_meaning": "拖延问题，回避决策",
+      "risk": "medium"
+    }
+  ],
+  "overall_assessment": "The translation effectively conveys the meaning of the original sentence while using a culturally appropriate idiom in Chinese. No major issues are found."
+}

@@ -300,6 +300,37 @@ test("getEnvDefaultsForSelection uses Qwen env defaults for custom qwen models",
   }
 })
 
+test("getEnvDefaultsForSelection uses built-in Qwen base url when env base url is missing", () => {
+  const originalQwenApiKey = process.env.QWEN_API_KEY
+  const originalQwenBaseUrl = process.env.QWEN_BASE_URL
+
+  process.env.QWEN_API_KEY = "qwen-env-key"
+  delete process.env.QWEN_BASE_URL
+
+  try {
+    const defaults = getEnvDefaultsForSelection({
+      profileId: "qwen-flash-card"
+    })
+
+    assert.equal(defaults.profileId, "qwen-flash-card")
+    assert.equal(defaults.providerFlavor, "openai-compatible")
+    assert.equal(defaults.apiKey, "qwen-env-key")
+    assert.equal(defaults.baseUrl, "https://dashscope.aliyuncs.com/compatible-mode")
+    assert.equal(defaults.model, "qwen-mt-flash")
+  } finally {
+    if (originalQwenApiKey === undefined) {
+      delete process.env.QWEN_API_KEY
+    } else {
+      process.env.QWEN_API_KEY = originalQwenApiKey
+    }
+    if (originalQwenBaseUrl === undefined) {
+      delete process.env.QWEN_BASE_URL
+    } else {
+      process.env.QWEN_BASE_URL = originalQwenBaseUrl
+    }
+  }
+})
+
 test("getEnvDefaultsForSelection uses generic env defaults for non-qwen custom models", () => {
   const originalQwenApiKey = process.env.QWEN_API_KEY
   const originalQwenBaseUrl = process.env.QWEN_BASE_URL

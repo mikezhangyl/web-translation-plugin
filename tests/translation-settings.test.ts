@@ -4,7 +4,9 @@ import {
   DEFAULT_DEBUG_ENABLED,
   DEFAULT_ANTHROPIC_BASE_URL,
   DEFAULT_ANTHROPIC_MODEL,
+  DEFAULT_QWEN_BASE_URL,
   DEFAULT_QWEN_BENCHMARK_MODELS,
+  DEFAULT_QWEN_FLASH_MODEL,
   DEBUG_LOG_LIMIT,
   DEFAULT_OPENAI_BASE_URL,
   DEFAULT_OPENAI_MODEL,
@@ -16,8 +18,10 @@ import {
 test("translation settings defaults are stable", () => {
   assert.equal(DEFAULT_OPENAI_BASE_URL, "https://api.openai.com")
   assert.equal(DEFAULT_ANTHROPIC_BASE_URL, "https://api.anthropic.com")
+  assert.equal(DEFAULT_QWEN_BASE_URL, "https://dashscope.aliyuncs.com/compatible-mode")
   assert.equal(DEFAULT_OPENAI_MODEL, "gpt-4o-mini")
   assert.equal(DEFAULT_ANTHROPIC_MODEL, "claude-3-5-haiku-latest")
+  assert.equal(DEFAULT_QWEN_FLASH_MODEL, "qwen-mt-flash")
   assert.equal(EMPTY_TRANSLATION_SETTINGS.profileId, "custom")
   assert.equal(EMPTY_TRANSLATION_SETTINGS.providerFlavor, "openai-compatible")
   assert.equal(EMPTY_TRANSLATION_SETTINGS.apiKey, "")
@@ -66,5 +70,21 @@ test("withFlavorDefaults locks qwen flash card profile to openai-compatible flas
   })
 
   assert.equal(profile.providerFlavor, "openai-compatible")
-  assert.equal(profile.model, "qwen-mt-flash")
+  assert.equal(profile.baseUrl, "https://api.minimaxi.com/anthropic")
+  assert.equal(profile.model, DEFAULT_QWEN_FLASH_MODEL)
+})
+
+test("withFlavorDefaults fills qwen flash card base url when it is blank", () => {
+  const profile = withFlavorDefaults({
+    profileId: "qwen-flash-card",
+    providerFlavor: "openai-compatible",
+    apiKey: "",
+    baseUrl: "",
+    model: "",
+    benchmarkModels: [],
+    debugEnabled: true
+  })
+
+  assert.equal(profile.baseUrl, DEFAULT_QWEN_BASE_URL)
+  assert.equal(profile.model, DEFAULT_QWEN_FLASH_MODEL)
 })

@@ -39,11 +39,13 @@ export const DEBUG_LOG_LIMIT = 200
 
 export const DEFAULT_OPENAI_BASE_URL = "https://api.openai.com"
 export const DEFAULT_ANTHROPIC_BASE_URL = "https://api.anthropic.com"
+export const DEFAULT_QWEN_BASE_URL = "https://dashscope.aliyuncs.com/compatible-mode"
 export const DEFAULT_OPENAI_MODEL = "gpt-4o-mini"
 export const DEFAULT_ANTHROPIC_MODEL = "claude-3-5-haiku-latest"
+export const DEFAULT_QWEN_FLASH_MODEL = "qwen-mt-flash"
 export const DEFAULT_QWEN_BENCHMARK_MODELS = [
   "qwen-mt-plus",
-  "qwen-mt-flash",
+  DEFAULT_QWEN_FLASH_MODEL,
   "qwen-mt-lite",
   "qwen-mt-turbo"
 ]
@@ -63,7 +65,8 @@ export const withFlavorDefaults = (settings: TranslationSettings): TranslationSe
     return {
       ...settings,
       providerFlavor: "openai-compatible",
-      model: "qwen-mt-flash"
+      baseUrl: settings.baseUrl || DEFAULT_QWEN_BASE_URL,
+      model: DEFAULT_QWEN_FLASH_MODEL
     }
   }
   return settings

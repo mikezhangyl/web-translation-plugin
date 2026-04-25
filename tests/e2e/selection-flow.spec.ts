@@ -10,6 +10,7 @@ import {
   type TestInfo
 } from "@playwright/test"
 import { TRANSLATION_STORAGE_KEYS } from "../../lib/translation-settings"
+import { VOCABULARY_STORAGE_KEY, type VocabularyEntry } from "../../lib/vocabulary-history"
 
 const repoRoot = process.cwd()
 const extensionPath = path.join(repoRoot, "build/chrome-mv3-prod")
@@ -121,6 +122,63 @@ test("selection flow shows openai-compatible success", async ({}, testInfo) => {
   })
 })
 
+test("flash-card vocabulary can be saved, sorted, and deleted from the popup", async ({}) => {
+  await runWithExtension(async ({ context, page }) => {
+    await setE2EMode(page, "openai_success")
+    const card = await openCard(page)
+    await expect(card.getByTestId("translation-line-meaning")).toHaveText("黑曜石（OpenAI）")
+
+    await card.getByTestId("save-vocabulary-entry").click()
+    await expect(card.getByTestId("save-vocabulary-entry")).toContainText("Saved to notebook")
+
+    const extensionId = await getExtensionId(context)
+    const popupPage = await context.newPage()
+    await popupPage.goto(`chrome-extension://${extensionId}/popup.html`, {
+      waitUntil: "domcontentloaded"
+    })
+
+    const seededEntry: VocabularyEntry = {
+      id: "seed-apple",
+      sourceText: "Apple",
+      normalizedText: "apple",
+      translation: "苹果",
+      phonetic: "/ˈæpəl/",
+      explanation: "a common fruit",
+      example: "She packed an apple for class.",
+      selectionType: "word",
+      createdAt: "2026-04-24T07:00:00.000Z",
+      updatedAt: "2026-04-24T07:00:00.000Z"
+    }
+    await popupPage.evaluate(
+      async ({ storageKey, entry }) => {
+        const values = await chrome.storage.local.get([storageKey])
+        const entries = Array.isArray(values[storageKey]) ? values[storageKey] : []
+        await chrome.storage.local.set({
+          [storageKey]: [...entries, entry]
+        })
+      },
+      { storageKey: VOCABULARY_STORAGE_KEY, entry: seededEntry }
+    )
+    await popupPage.getByRole("button", { name: "Refresh", exact: true }).click()
+
+    await expect(popupPage.getByRole("heading", { name: "My Vocabulary" })).toBeVisible()
+    const vocabularyList = popupPage.getByTestId("vocabulary-list")
+    await expect(vocabularyList.getByTestId("vocabulary-entry-text").filter({ hasText: "Example" })).toBeVisible()
+    await expect(vocabularyList.getByText("/əbˈsɪdiən/")).toBeVisible()
+    await expect(vocabularyList.getByText("黑曜石（OpenAI）")).toBeVisible()
+
+    await popupPage.getByTestId("vocabulary-sort-order").selectOption("az")
+    await expect(popupPage.getByTestId("vocabulary-entry-text").first()).toHaveText("Apple")
+
+    await popupPage.getByRole("button", { name: "Delete Example" }).click()
+    await expect(vocabularyList.getByTestId("vocabulary-entry-text").filter({ hasText: "Example" })).toHaveCount(0)
+
+    await popupPage.getByRole("button", { name: "Delete Apple" }).click()
+    await expect(popupPage.getByTestId("vocabulary-empty-state")).toBeVisible()
+    await popupPage.close()
+  })
+})
+
 test("selection flow still shows marker when host page hides native buttons", async ({}) => {
   await runWithExtension(async ({ page }) => {
     await setE2EMode(page, "openai_success")
@@ -151,10 +209,107 @@ test("selection flow shows sentence translation without phonetic or example", as
   await runWithExtension(async ({ page }) => {
     await setE2EMode(page, "openai_success")
     const card = await openSentenceCard(page)
+    await expect(card.getByTestId("translation-card-title")).toHaveText("Live translation")
+    await expect(card.getByText("Quick Translate")).toHaveCount(0)
+    await expect(card.getByText("Live Sentence Translation")).toHaveCount(0)
     await expect(card.getByTestId("translation-line-meaning")).toHaveText("这是一句用于 OpenAI 模拟测试的中文译文。")
     await expect(card.getByTestId("translation-line-phonetic")).toHaveCount(0)
     await expect(card.getByTestId("translation-line-example")).toHaveCount(0)
+    await expect(card.getByTestId("translation-risk-notice")).toBeVisible()
+    await expect(card.getByTestId("translation-risk-notice")).toContainText("可能存在特殊表达")
     await attachScreenshot(page, testInfo, "e2e-openai-sentence-success")
+  })
+})
+
+test("translation card can be dragged from blank surface and remembers position", async ({}) => {
+  await runWithExtension(async ({ page }) => {
+    await setE2EMode(page, "openai_success")
+    const card = await openSentenceCard(page)
+    const before = await card.boundingBox()
+    if (!before) {
+      throw new Error("translation card bounding box missing before drag")
+    }
+
+    await page.mouse.move(before.x + 34, before.y + 14)
+    await page.mouse.down()
+    await page.mouse.move(before.x + 154, before.y + 94, { steps: 8 })
+    await page.mouse.up()
+
+    await expect
+      .poll(async () => {
+        const after = await card.boundingBox()
+        return after ? Math.round(after.x - before.x) : 0
+      })
+      .toBeGreaterThan(80)
+
+    const dragged = await card.boundingBox()
+    if (!dragged) {
+      throw new Error("translation card bounding box missing after drag")
+    }
+    await card.getByRole("button", { name: "Close translation card" }).click()
+
+    const reopened = await openSentenceCard(page)
+    const persisted = await reopened.boundingBox()
+    if (!persisted) {
+      throw new Error("translation card bounding box missing after reopen")
+    }
+
+    await expect(Math.abs(persisted.x - dragged.x)).toBeLessThan(16)
+    await expect(Math.abs(persisted.y - dragged.y)).toBeLessThan(16)
+  })
+})
+
+test("selection flow shows a guidance card for oversized paragraph selections without sending a request", async ({}) => {
+  await runWithExtension(async ({ context, page }) => {
+    const extensionId = await getExtensionId(context)
+    const popupPage = await context.newPage()
+    await popupPage.goto(`chrome-extension://${extensionId}/popup.html`, {
+      waitUntil: "domcontentloaded"
+    })
+    await popupPage.evaluate(async (keys) => {
+      await chrome.storage.local.set({
+        [keys.debugEnabled]: true,
+        [keys.debugLogs]: []
+      })
+    }, TRANSLATION_STORAGE_KEYS)
+    await popupPage.close()
+
+    const longParagraph = Array.from({ length: 251 }, (_, index) => `word${index}`).join(" ")
+    await page.evaluate((paragraphText) => {
+      document.body.innerHTML = `
+        <main style="padding: 48px; font-family: Arial, sans-serif;">
+          <h1 style="font-size: 32px; line-height: 1.2; margin: 0 0 18px;">Obsidian</h1>
+          <p style="font-size: 18px; line-height: 1.6; max-width: 680px; margin: 0;">${paragraphText}</p>
+        </main>
+      `
+    }, longParagraph)
+
+    const card = await openSentenceCard(page)
+    await expect(card.getByTestId("translation-selection-notice-title")).toHaveText("Selection needs trimming")
+    await expect(card.getByTestId("translation-selection-notice-message")).toContainText(
+      "single paragraph up to 250 words or 1500 characters"
+    )
+    await expect(card.getByTestId("translation-loading")).toHaveCount(0)
+    await expect(card.getByTestId("translation-error")).toHaveCount(0)
+
+    const inspectPopup = await context.newPage()
+    await inspectPopup.goto(`chrome-extension://${extensionId}/popup.html`, {
+      waitUntil: "domcontentloaded"
+    })
+    const logSummary = await inspectPopup.evaluate(async (keys) => {
+      const values = await chrome.storage.local.get([keys.debugLogs])
+      const logs = Array.isArray(values[keys.debugLogs]) ? values[keys.debugLogs] : []
+      return {
+        rejectedReasons: logs
+          .filter((entry) => entry?.event === "ui_selection_rejected")
+          .map((entry) => String(entry?.payload?.reason ?? "")),
+        requestReceivedCount: logs.filter((entry) => entry?.event === "request_received").length
+      }
+    }, TRANSLATION_STORAGE_KEYS)
+    await inspectPopup.close()
+
+    await expect(logSummary.rejectedReasons).toContain("too_long")
+    await expect(logSummary.requestReceivedCount).toBe(0)
   })
 })
 

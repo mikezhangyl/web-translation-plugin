@@ -4,13 +4,43 @@
 
 - Stack: Plasmo + React + TypeScript + Manifest V3.
 - Main interaction: a distinct golden/orange floating marker appears near supported text selections and opens the translation card.
+- Translation card presentation is a compact popover:
+  - concise title: `Live translation`
+  - smaller professional typography and tighter spacing
+  - draggable from non-interactive card surfaces
+  - last dragged position is persisted in `chrome.storage.local`
 - Popup surface includes:
   - provider settings
   - benchmark-model settings
+  - local vocabulary notebook
   - troubleshooting log viewer
   - copy-logs action
   - clear-logs action
+- Local vocabulary history stores saved flash-card entries in `chrome.storage.local`.
 - Current target language default remains `zh-CN`.
+
+## Vocabulary Notebook
+
+- First shipped path is manual save from successful word and short-phrase flash cards.
+- Saved entries preserve:
+  - source text
+  - normalized text
+  - translation
+  - phonetic
+  - explanation
+  - optional literal translation
+  - optional usage note for non-literal expressions
+  - example
+  - optional source URL/title/context
+  - created and updated timestamps
+- Duplicate saves use `normalizedText` as the primary de-dupe key.
+- Duplicate saves preserve the original `createdAt` and refresh `updatedAt` plus the latest flash-card details.
+- Popup review supports:
+  - newest added
+  - oldest added
+  - A-Z
+  - Z-A
+  - delete
 
 ## Accepted Translation Modes
 
@@ -20,8 +50,14 @@
 - Uses flash-card output from `qwen-mt-flash`.
 - Card shape:
   - phonetic
-  - meaning
+  - natural meaning
+  - optional literal translation
+  - optional usage note
   - example
+- Flash-card meaning should prefer natural Chinese semantics over word-by-word literal translation.
+- For idioms, workplace slang, cultural expressions, domain terms, or phrases that would mislead if translated literally, the card should include:
+  - `literal`: short literal translation when useful
+  - `note`: explanation of what the expression commonly means in English and why literal translation is insufficient
 - Streaming partial card updates are acceptable before the final response settles.
 
 ### Sentence
@@ -32,28 +68,43 @@
   - translated sentence only
   - no phonetic row
   - no example row
+- Qwen MT sentence translations run a second lightweight self-review pass after the main translation.
+- If the self-review flags likely slang, idioms, neologisms, domain terms, metaphors, or misleading literal translations, the UI shows a warning below the translation.
+- Risk warnings are treated as candidate notices only:
+  - they do not replace the main translation
+  - they do not claim semantic certainty
+  - they show that a source expression may need extra attention, not the model's proposed explanation as fact
+  - they should not be used as canonical term explanations without stronger glossary or source verification
 
 ### Paragraph
 
 - Still exploratory.
-- Not yet a stable acceptance path.
-- Product questions still open:
-  - length limits
-  - card presentation rules
-  - evaluation criteria for good output
+- Translation is attempted only for a single selected paragraph.
+- Current guardrails:
+  - reject selections that span multiple paragraphs
+  - reject selections longer than `250` whitespace-delimited words
+  - reject selections longer than `1500` characters
+- When paragraph selection is rejected by these limits, the card stays user-visible and explains how to trim the selection instead of silently failing.
+- Not yet a stable acceptance path for translation quality or rendering richness.
 
 ## Provider And Settings Rules
 
 - Popup supports two saved profiles:
   - `custom`
   - `qwen-flash-card`
+- `qwen-flash-card` is a built-in product profile:
+  - provider flavor is fixed to `openai-compatible`
+  - model is fixed to `qwen-mt-flash`
+  - base URL defaults to `https://dashscope.aliyuncs.com/compatible-mode`
+  - API key is still user-provided or explicitly saved from env-backed display defaults
 - Popup display resolves values in this order:
   - storage first
-  - env-derived defaults second
+  - built-in profile defaults and env-derived defaults second
   - blank otherwise
-- Env display fallback is model-aware for Qwen:
+- Display fallback is model-aware for Qwen:
   - selecting `qwen-flash-card` uses `QWEN_API_KEY` and `QWEN_BASE_URL`
   - custom configurations whose model matches `qwen-mt-*` also use `QWEN_*` for display backfill
+- If `QWEN_BASE_URL` is absent, Qwen display and runtime profile construction use the built-in DashScope compatible-mode URL.
 - Runtime translation requests use only saved storage values.
 - There is no hidden runtime env fallback and no automatic provider failover.
 - Empty or incomplete saved config should fail loudly rather than silently switching providers or models.
@@ -74,14 +125,17 @@
 
 ## Known Limits And Risks
 
-- Paragraph translation is not yet productized.
+- Paragraph translation remains constrained and is not yet productized beyond the single-paragraph limit contract.
+- Vocabulary history is local-device only; there is no account sync, export, spaced repetition, or dashboard view yet.
+- Sentence risk notices are heuristic model self-review output. They are useful for warning that a phrase may need extra attention, but they are not a reliable source of the correct meaning.
 - Provider knowledge is more stable than before, but there is still no dedicated long-lived provider-facts template beyond the core docs.
 - Benchmark/comparison settings remain diagnostics-oriented and are not the main user-visible acceptance path.
 - Troubleshooting logs intentionally help diagnosis, but they can expose selected text, translated text, URLs, and timing details.
 
 ## Next Recommended Workstream
 
-- Stabilize paragraph translation as an explicit product mode.
+- Polish the vocabulary notebook for study workflows, including denser review states, import/export, or spaced repetition only after the local save path proves useful.
+- Continue stabilizing paragraph translation as an explicit product mode.
 - Keep the provider workflow strict for any new provider/model work:
   - docs
   - curl connectivity

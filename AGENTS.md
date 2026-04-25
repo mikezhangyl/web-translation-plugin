@@ -50,6 +50,7 @@ Repository-specific operating guide for `web-translation-plugin`.
 - Validate behavior with concrete commands before closing work.
 - For provider or browser-platform changes, verify against primary docs before implementation.
 - For first-time provider or model-family work, follow `docs -> curl -> integration -> live E2E`.
+- For LLM invocation changes, do not edit product code first. This means changes to how this product calls a model, not changes to the model itself. If a request changes prompts, message layout, temperature, top-p/top-k or other sampling parameters, structured-output schema, model selection, provider routing, streaming mode, or expected semantic output, first run a provider probe with representative inputs and review the raw outputs with the user. Only implement after the desired invocation behavior is confirmed.
 - Treat mock browser flows as regression checks only; final provider acceptance is live E2E.
 - Log file-changing instructions in the active session file referenced by `codex/current-session.md`.
 - Use the exact section layout from `codex/log-template.md` for each logged step.

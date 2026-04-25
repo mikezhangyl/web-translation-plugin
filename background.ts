@@ -20,7 +20,9 @@ import {
   DEFAULT_DEBUG_ENABLED,
   DEFAULT_ANTHROPIC_BASE_URL,
   DEFAULT_ANTHROPIC_MODEL,
+  DEFAULT_QWEN_BASE_URL,
   DEFAULT_QWEN_BENCHMARK_MODELS,
+  DEFAULT_QWEN_FLASH_MODEL,
   DEFAULT_OPENAI_BASE_URL,
   DEFAULT_OPENAI_MODEL,
   type TranslationDebugLogEntry,
@@ -228,6 +230,28 @@ const getE2EDependencies = (mode: NonNullable<TranslationMessage["payload"]["e2e
       mode === "anthropic_success"
         ? "这是一句用于 Anthropics 模拟测试的中文译文。"
         : "这是一句用于 OpenAI 模拟测试的中文译文。"
+    const firstMessage = String(body.messages?.[0]?.content ?? "")
+    const riskReviewPayload = JSON.stringify({
+      suspicious_terms: [
+        {
+          source: "mock expression",
+          translation: "模拟表达",
+          reason: "Mocked review marks this as a possible special expression.",
+          suggested_meaning: "a mocked expression that may need extra attention",
+          risk: "medium"
+        }
+      ],
+      overall_assessment: "Mocked risk review."
+    })
+
+    if (firstMessage.includes("MACHINE_TRANSLATION:")) {
+      return new Response(
+        JSON.stringify({
+          choices: [{ message: { content: riskReviewPayload } }]
+        }),
+        { status: 200, headers: { "Content-Type": "application/json" } }
+      )
+    }
 
     if (cfg.providerFlavor === "anthropic-compatible") {
       return new Response(
@@ -304,8 +328,8 @@ const getQwenEnvDefaults = (): TranslationEnvDefaultsResponse["data"] => ({
   profileId: "qwen-flash-card",
   providerFlavor: "openai-compatible",
   apiKey: readRuntimeEnvSetting("QWEN_API_KEY"),
-  baseUrl: readRuntimeEnvSetting("QWEN_BASE_URL"),
-  model: "qwen-mt-flash"
+  baseUrl: readRuntimeEnvSetting("QWEN_BASE_URL") || DEFAULT_QWEN_BASE_URL,
+  model: DEFAULT_QWEN_FLASH_MODEL
 })
 
 export const getEnvDefaultsForSelection = (selection?: {
@@ -339,8 +363,8 @@ const getQwenProfileDeps = (settings?: TranslationSettings | null): TranslateDep
   env: {
     LLM_PROVIDER_FLAVOR: "openai-compatible",
     LLM_API_KEY: settings?.apiKey ?? "",
-    LLM_BASE_URL: settings?.baseUrl ?? "",
-    LLM_MODEL: "qwen-mt-flash"
+    LLM_BASE_URL: settings?.baseUrl || DEFAULT_QWEN_BASE_URL,
+    LLM_MODEL: DEFAULT_QWEN_FLASH_MODEL
   },
   allowProcessEnvFallback: false
 })

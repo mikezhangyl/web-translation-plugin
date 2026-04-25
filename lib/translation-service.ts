@@ -6,7 +6,8 @@ import type {
   TranslateResponse,
   TranslationCard,
   TranslationProvider,
-  TranslationProviderFlavor
+  TranslationProviderFlavor,
+  TranslationRiskNotice
 } from "./translation-contract"
 import {
   DEFAULT_ANTHROPIC_BASE_URL,
@@ -64,6 +65,15 @@ const DEFAULT_PROVIDER_TIMEOUT_MS = 10_000
 const FLASH_CARD_MODEL = "qwen-mt-flash"
 const SYSTEM_PROMPT =
   "You are an expert bilingual translation specialist. Translate the user's input into Simplified Chinese (zh-CN) with high semantic fidelity. Keep proper nouns, product names, and technical terms accurate. Preserve intended tone and concise style. Return only the final translated text, with no explanations, notes, markdown, quotes, or extra lines."
+const RISK_REVIEW_PROMPT = `You are reviewing an English-to-Simplified-Chinese machine translation for an English learner.
+Return strict JSON only with this shape:
+{
+  "suspicious_terms": [
+    {"source":"...", "translation":"...", "reason":"...", "suggested_meaning":"...", "risk":"low|medium|high"}
+  ],
+  "overall_assessment":"..."
+}
+Flag only expressions that may be slang, idioms, neologisms, domain terms, metaphors, or misleading literal translations. If nothing is suspicious, return an empty array. Do not invent issues for ordinary literal text.`
 const SERVICE_LOG_PREFIX = "[translation:svc]"
 
 const maskSecret = (value: string) => {
@@ -106,10 +116,12 @@ const buildFlashCardPrompt = (text: string) =>
   [
     "You are a translation expert for English learners.",
     "Return strict JSON only.",
-    'Use exactly these keys: phonetic, meaning, example.',
+    'Use exactly these keys: phonetic, meaning, literal, note, example.',
     "phonetic is required.",
     'phonetic: IPA string for the English word or phrase. Never leave it empty. For short phrases, provide best-effort IPA for the phrase or its key word.',
-    "meaning: concise Simplified Chinese explanation.",
+    "meaning: concise natural Simplified Chinese meaning. Prefer idiomatic semantic translation over word-by-word literal translation.",
+    'literal: short Simplified Chinese literal translation when it helps explain the phrase; use "" when not useful.',
+    'note: concise explanation when the phrase is idiomatic, slang, cultural, domain-specific, or misleading if translated literally; explain what it commonly means in English. Use "" for ordinary literal words.',
     'example: one short example sentence followed by its Simplified Chinese translation on the same line, separated by " — ".',
     `Word or phrase: ${text}`
   ].join(" ")
@@ -124,11 +136,13 @@ const parseFlashCard = (raw: string): TranslationCard | null => {
     const parsed = JSON.parse(stripMarkdownCodeFence(raw)) as Partial<TranslationCard>
     const phonetic = String(parsed.phonetic ?? "").trim()
     const meaning = String(parsed.meaning ?? "").trim()
+    const literal = String(parsed.literal ?? "").trim()
+    const note = String(parsed.note ?? "").trim()
     const example = String(parsed.example ?? "").trim()
     if (!meaning) {
       return null
     }
-    return { phonetic, meaning, example }
+    return { phonetic, meaning, literal, note, example }
   } catch {
     return null
   }
@@ -151,23 +165,73 @@ const parsePartialFlashCard = (raw: string): Partial<TranslationCard> => {
   return {
     ...(extract("phonetic") ? { phonetic: extract("phonetic") } : {}),
     ...(extract("meaning") ? { meaning: extract("meaning") } : {}),
+    ...(extract("literal") ? { literal: extract("literal") } : {}),
+    ...(extract("note") ? { note: extract("note") } : {}),
     ...(extract("example") ? { example: extract("example") } : {})
   }
 }
 
+const parseRiskNotices = (raw: string): TranslationRiskNotice[] => {
+  try {
+    const parsed = JSON.parse(stripMarkdownCodeFence(raw)) as {
+      suspicious_terms?: Array<{
+        source?: unknown
+        translation?: unknown
+        reason?: unknown
+        suggested_meaning?: unknown
+        risk?: unknown
+      }>
+    }
+    if (!Array.isArray(parsed.suspicious_terms)) {
+      return []
+    }
+
+    return parsed.suspicious_terms.flatMap((item) => {
+      const source = String(item.source ?? "").trim()
+      const reason = String(item.reason ?? "").trim()
+      if (!source || !reason) {
+        return []
+      }
+
+      const risk = String(item.risk ?? "").trim().toLowerCase()
+      const normalizedRisk: TranslationRiskNotice["risk"] =
+        risk === "low" || risk === "medium" || risk === "high" ? risk : "medium"
+      const translation = String(item.translation ?? "").trim()
+      const suggestedMeaning = String(item.suggested_meaning ?? "").trim()
+
+      return [
+        {
+          source,
+          ...(translation ? { translation } : {}),
+          reason,
+          ...(suggestedMeaning ? { suggestedMeaning } : {}),
+          risk: normalizedRisk
+        }
+      ]
+    })
+  } catch {
+    return []
+  }
+}
+
+const buildRiskReviewPrompt = (sourceText: string, translatedText: string) =>
+  `${RISK_REVIEW_PROMPT}\n\nSOURCE:\n${sourceText}\n\nMACHINE_TRANSLATION:\n${translatedText}`
+
 const toTranslateResponse = (
   provider: TranslationProvider,
   translatedText: string,
-  card?: TranslationCard
+  card?: TranslationCard,
+  riskNotices?: TranslationRiskNotice[]
 ): TranslateResponse => ({
   translatedText,
   provider,
   fallbackUsed: false,
-  ...(card ? { card } : {})
+  ...(card ? { card } : {}),
+  ...(riskNotices && riskNotices.length > 0 ? { riskNotices } : {})
 })
 
 const toCardText = (card: Partial<TranslationCard>) =>
-  [card.phonetic, card.meaning, card.example].filter(Boolean).join("\n")
+  [card.phonetic, card.meaning, card.literal, card.note, card.example].filter(Boolean).join("\n")
 
 const mapFlavorToProvider = (flavor: TranslationProviderFlavor): TranslationProvider =>
   flavor === "anthropic-compatible" ? "anthropic_compatible" : "openai_compatible"
@@ -252,6 +316,63 @@ const withTimeout = async <T>(
   }
 }
 
+const reviewTranslationRisks = async ({
+  url,
+  config,
+  fetchImpl,
+  timeoutMs,
+  sourceText,
+  translatedText
+}: {
+  url: string
+  config: ProviderConfig
+  fetchImpl: typeof fetch
+  timeoutMs: number
+  sourceText: string
+  translatedText: string
+}): Promise<TranslationRiskNotice[]> => {
+  try {
+    const response = await withTimeout(timeoutMs, (signal) =>
+      fetchImpl(url, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${config.apiKey}`
+        },
+        body: JSON.stringify({
+          model: config.model,
+          messages: [{ role: "user", content: buildRiskReviewPrompt(sourceText, translatedText) }],
+          temperature: 0
+        }),
+        signal
+      })
+    )
+    if (!response.ok) {
+      logInfo("openai_risk_review_skipped", { status: response.status })
+      return []
+    }
+
+    const payload = (await response.json()) as {
+      choices?: Array<{ message?: { content?: string | Array<{ type?: string; text?: string }> } }>
+    }
+    const content = payload.choices?.[0]?.message?.content
+    const raw =
+      typeof content === "string"
+        ? content.trim()
+        : Array.isArray(content)
+          ? content.map((part) => part.text ?? "").join("").trim()
+          : ""
+    const notices = parseRiskNotices(raw)
+    logInfo("openai_risk_review_success", { noticeCount: notices.length })
+    return notices
+  } catch (error) {
+    logInfo("openai_risk_review_skipped", {
+      message: error instanceof Error ? error.message : String(error)
+    })
+    return []
+  }
+}
+
 const translateWithOpenAICompatible = async (
   request: TranslateRequest,
   config: ProviderConfig,
@@ -278,6 +399,8 @@ const translateWithOpenAICompatible = async (
     apiKeyMasked: maskSecret(config.apiKey),
     textLength: request.text.length
   })
+  const qwenMtMode = isQwenMtModel(config.model)
+  const flashCardMode = shouldUseFlashCardMode(config.model, request.text)
   debugHook?.({
     provider,
     stage: "request_start",
@@ -288,8 +411,6 @@ const translateWithOpenAICompatible = async (
   let response: Response
   let ttfbMs = 0
   try {
-    const qwenMtMode = isQwenMtModel(config.model)
-    const flashCardMode = shouldUseFlashCardMode(config.model, request.text)
     const userOnlyPrompt = request.sourceLang
       ? `Translate the following text from ${request.sourceLang} to ${request.targetLang}.\nText:\n${request.text}`
       : `Translate the following text to ${request.targetLang}.\nText:\n${request.text}`
@@ -387,12 +508,23 @@ const translateWithOpenAICompatible = async (
   if (shouldUseFlashCardMode(config.model, request.text)) {
     const card = parseFlashCard(translatedText)
     if (card) {
-      const normalizedText = [card.phonetic, card.meaning, card.example].filter(Boolean).join("\n")
+      const normalizedText = toCardText(card)
       return toTranslateResponse(provider, normalizedText, card)
     }
   }
 
-  return toTranslateResponse(provider, translatedText)
+  const riskNotices = qwenMtMode && !flashCardMode
+    ? await reviewTranslationRisks({
+        url,
+        config,
+        fetchImpl,
+        timeoutMs,
+        sourceText: request.text,
+        translatedText
+      })
+    : []
+
+  return toTranslateResponse(provider, translatedText, undefined, riskNotices)
 }
 
 const streamWithOpenAICompatible = async (
@@ -679,7 +811,7 @@ const translateWithAnthropicCompatible = async (
   if (shouldUseFlashCardMode(config.model, request.text)) {
     const card = parseFlashCard(translatedText)
     if (card) {
-      const normalizedText = [card.phonetic, card.meaning, card.example].filter(Boolean).join("\n")
+      const normalizedText = toCardText(card)
       return toTranslateResponse(provider, normalizedText, card)
     }
   }

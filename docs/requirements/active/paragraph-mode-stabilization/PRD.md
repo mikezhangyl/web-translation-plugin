@@ -47,6 +47,9 @@ Define and validate paragraph translation as an intentional product mode without
 
 - Word and short-phrase flash-card behavior must remain unchanged.
 - Sentence plain-translation behavior must remain unchanged.
+- Paragraph mode must initially accept only a single paragraph at a time.
+- Paragraph mode must reject selections longer than `250` whitespace-delimited words or `1500` characters.
+- Over-limit or multi-paragraph selections must open a user-visible guidance card instead of silently disappearing.
 - Popup display may use env defaults, but runtime requests must continue using saved storage values only.
 - Live E2E remains the final acceptance path for provider-backed behavior.
 

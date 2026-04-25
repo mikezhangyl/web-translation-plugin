@@ -1,31 +1,54 @@
-import { useEffect, useRef, useState } from "react"
+import { useEffect, useRef, useState, type PointerEvent as ReactPointerEvent } from "react"
 import { createPortal } from "react-dom"
 import type {
   TranslateRequest,
   TranslationCard,
   TranslationMessageResponse,
+  TranslationRiskNotice,
   TranslationStreamServerMessage
 } from "../lib/translation-contract"
 import { TranslationRequestQueue } from "../lib/translation-request-queue"
 import {
   buildDryRunTranslation,
   clamp,
+  computeMarkerPositionFromPointer,
   computeMarkerPositionFromRect,
   DOT_SIZE,
+  getWordCount,
+  getSelectionSupport,
   isFlashCardSelection,
-  isSupportedSelection,
-  type MarkerPosition
+  MAX_SUPPORTED_SELECTION_LENGTH,
+  MAX_SUPPORTED_SELECTION_WORDS,
+  type MarkerPosition,
+  type PointerPosition
 } from "../lib/selection-ui"
+import { saveVocabularyEntry } from "../lib/vocabulary-history"
 
 const Z_INDEX = 2147483646
 const UI_LOG_PREFIX = "[translation:ui]"
 const BENCHMARK_REQUEST_CONCURRENCY = 4
 const FLASH_MODEL = "qwen-mt-flash"
-const CARD_FONT_STACK = "'Avenir Next', 'Segoe UI', 'Helvetica Neue', sans-serif"
-const DISPLAY_FONT_STACK = "'Iowan Old Style', 'Palatino Linotype', 'Book Antiqua', Georgia, serif"
+const CARD_FONT_STACK = "'Avenir Next', 'SF Pro Text', 'Segoe UI', 'Helvetica Neue', sans-serif"
+const DISPLAY_FONT_STACK = "'Avenir Next', 'SF Pro Display', 'Segoe UI', 'Helvetica Neue', sans-serif"
 const ACCENT_GRADIENT = "linear-gradient(145deg, #ffb164 0%, #ff8d47 52%, #df6f2f 100%)"
 const ACCENT_SHADOW = "rgba(223,111,47,0.28)"
 const OVERLAY_ROOT_ID = "translation-overlay-root"
+const CARD_POSITION_STORAGE_KEY = "translation.card.position"
+const CARD_WIDTH = 468
+const CARD_HEIGHT_ESTIMATE = 380
+
+type CardPosition = {
+  left: number
+  top: number
+}
+
+type DragState = {
+  pointerId: number
+  startX: number
+  startY: number
+  startLeft: number
+  startTop: number
+}
 
 const createTraceId = () =>
   `ui-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`
@@ -69,6 +92,7 @@ type TranslationState =
       detectedSourceLang?: string
       provider: "openai_compatible" | "anthropic_compatible"
       fallbackUsed: boolean
+      riskNotices?: TranslationRiskNotice[]
     }
   | {
       status: "error"
@@ -77,20 +101,55 @@ type TranslationState =
       message: string
     }
 
-const getMarkerPosition = (): MarkerPosition | null => {
-  const selection = window.getSelection()
-  if (!selection || selection.rangeCount === 0 || selection.isCollapsed) {
+type SelectionNotice = {
+  title: string
+  message: string
+  reason: "multiple_paragraphs" | "too_long"
+}
+
+type SaveState = "idle" | "saving" | "saved" | "updated" | "error"
+
+const getCardWidth = () => Math.min(CARD_WIDTH, Math.max(280, window.innerWidth - 24))
+const clampCardPosition = (position: CardPosition): CardPosition => ({
+  left: clamp(position.left, 12, Math.max(12, window.innerWidth - getCardWidth() - 12)),
+  top: clamp(position.top, 12, Math.max(12, window.innerHeight - CARD_HEIGHT_ESTIMATE))
+})
+
+const defaultCardPosition = (position: MarkerPosition): CardPosition =>
+  clampCardPosition({
+    left: position.left - 178,
+    top: position.top + 22
+  })
+
+const isDraggableCardTarget = (target: EventTarget | null, card: HTMLElement | null) => {
+  if (!(target instanceof HTMLElement) || !card?.contains(target)) {
+    return false
+  }
+  if (target.closest("button,a,input,select,textarea,[role='button']")) {
+    return false
+  }
+  return true
+}
+
+const loadStoredCardPosition = async (): Promise<CardPosition | null> => {
+  if (typeof chrome === "undefined" || !chrome.storage?.local) {
     return null
   }
-
-  const selectionRect = selection.getRangeAt(0).getBoundingClientRect()
-  const rect = {
-    width: selectionRect.width,
-    height: selectionRect.height,
-    right: selectionRect.right,
-    bottom: selectionRect.bottom
+  const values = await chrome.storage.local.get([CARD_POSITION_STORAGE_KEY])
+  const candidate = values[CARD_POSITION_STORAGE_KEY] as Partial<CardPosition> | undefined
+  if (typeof candidate?.left !== "number" || typeof candidate?.top !== "number") {
+    return null
   }
-  return computeMarkerPositionFromRect(rect, { width: window.innerWidth, height: window.innerHeight })
+  return clampCardPosition({ left: candidate.left, top: candidate.top })
+}
+
+const saveStoredCardPosition = async (position: CardPosition) => {
+  if (typeof chrome === "undefined" || !chrome.storage?.local) {
+    return
+  }
+  await chrome.storage.local.set({
+    [CARD_POSITION_STORAGE_KEY]: clampCardPosition(position)
+  })
 }
 
 const markerStyle = (position: MarkerPosition) =>
@@ -128,23 +187,24 @@ const markerGlyphStemStyle = {
   boxShadow: "0 1px 2px rgba(85,38,58,0.18)"
 } as const
 
-const cardContainerStyle = (position: MarkerPosition) =>
+const cardContainerStyle = (position: CardPosition) =>
   ({
     all: "initial",
     position: "fixed",
-    width: 520,
+    width: CARD_WIDTH,
     maxWidth: "calc(100vw - 24px)",
-    left: clamp(position.left - 212, 12, window.innerWidth - 532),
-    top: clamp(position.top + 24, 12, window.innerHeight - 460),
-    borderRadius: 24,
+    left: position.left,
+    top: position.top,
+    borderRadius: 18,
     background:
-      "linear-gradient(180deg, rgba(255,255,255,0.98) 0%, rgba(244,240,245,0.98) 100%)",
-    border: "1px solid rgba(110,96,122,0.12)",
-    boxShadow: "0 28px 80px rgba(34,24,41,0.16), 0 6px 22px rgba(34,24,41,0.08)",
-    padding: "18px 18px 16px",
+      "linear-gradient(180deg, rgba(255,255,255,0.985) 0%, rgba(248,246,243,0.975) 100%)",
+    border: "1px solid rgba(67,58,68,0.12)",
+    boxShadow: "0 18px 48px rgba(34,24,41,0.14), 0 4px 14px rgba(34,24,41,0.08)",
+    padding: "14px",
     color: "#2d2530",
     fontFamily: CARD_FONT_STACK,
-    backdropFilter: "blur(18px)",
+    backdropFilter: "blur(16px)",
+    cursor: "default",
     animation: "translationCardEnter 180ms cubic-bezier(0.2, 0.9, 0.25, 1)",
     zIndex: Z_INDEX
   }) as const
@@ -161,13 +221,13 @@ const overlayRootStyle = {
 const providerPillStyle = {
   display: "inline-flex",
   alignItems: "center",
-  gap: 10,
-  background: "rgba(247,242,246,0.96)",
-  border: "1px solid rgba(108,90,114,0.12)",
-  borderRadius: 999,
-  padding: "8px 12px",
+  gap: 8,
+  background: "rgba(247,242,237,0.92)",
+  border: "1px solid rgba(108,90,80,0.12)",
+  borderRadius: 14,
+  padding: "7px 9px",
   fontSize: 12,
-  fontWeight: 600,
+  fontWeight: 650,
   letterSpacing: "0.01em",
   color: "#4b3d50"
 } as const
@@ -180,11 +240,11 @@ const closeButtonStyle = {
   color: "#6b5a71",
   cursor: "pointer",
   display: "inline-flex",
-  height: 30,
+  height: 28,
   justifyContent: "center",
   lineHeight: 1,
   transition: "all 120ms ease",
-  width: 30
+  width: 28
 } as const
 
 const requestRuntime = async (
@@ -285,14 +345,46 @@ const getE2EMode = (): TranslateRequest["e2eMode"] => {
   return undefined
 }
 
+const getSelectionNotice = (
+  reason: SelectionNotice["reason"]
+): SelectionNotice => {
+  if (reason === "multiple_paragraphs") {
+    return {
+      reason,
+      title: "Select a single paragraph",
+      message: "Paragraph translation currently supports one paragraph at a time. Please trim the selection to a single block."
+    }
+  }
+
+  return {
+    reason,
+    title: "Selection needs trimming",
+    message: `Paragraph translation currently supports a single paragraph up to ${MAX_SUPPORTED_SELECTION_WORDS} words or ${MAX_SUPPORTED_SELECTION_LENGTH} characters. Please shorten the selection and try again.`
+  }
+}
+
+const getSelectionContextText = () => {
+  const selection = window.getSelection()
+  if (!selection || selection.rangeCount === 0) {
+    return ""
+  }
+
+  const containerText = selection.getRangeAt(0).commonAncestorContainer.textContent ?? ""
+  return containerText.trim().replace(/\s+/g, " ").slice(0, 280)
+}
+
 const MainWorldSelectionTranslator = () => {
   const [selectedText, setSelectedText] = useState("")
   const [position, setPosition] = useState<MarkerPosition | null>(null)
   const [showCard, setShowCard] = useState(false)
   const [translationState, setTranslationState] = useState<TranslationState | null>(null)
+  const [selectionNotice, setSelectionNotice] = useState<SelectionNotice | null>(null)
+  const [saveState, setSaveState] = useState<SaveState>("idle")
   const [overlayRoot, setOverlayRoot] = useState<HTMLElement | null>(null)
+  const [cardPosition, setCardPosition] = useState<CardPosition | null>(null)
   const dotRef = useRef<HTMLDivElement | null>(null)
   const cardRef = useRef<HTMLElement | null>(null)
+  const dragStateRef = useRef<DragState | null>(null)
   const requestIdRef = useRef(0)
   const activeTraceIdRef = useRef<string | null>(null)
   const flowStartAtRef = useRef<number | null>(null)
@@ -382,6 +474,57 @@ const MainWorldSelectionTranslator = () => {
     activeTraceIdRef.current = null
     flowStartAtRef.current = null
     firstResultLoggedRef.current = false
+    setSaveState("idle")
+  }
+
+  const startCardDrag = (event: ReactPointerEvent<HTMLElement>, currentPosition: CardPosition) => {
+    if (!isDraggableCardTarget(event.target, cardRef.current)) {
+      return
+    }
+    event.preventDefault()
+    event.currentTarget.setPointerCapture(event.pointerId)
+    dragStateRef.current = {
+      pointerId: event.pointerId,
+      startX: event.clientX,
+      startY: event.clientY,
+      startLeft: currentPosition.left,
+      startTop: currentPosition.top
+    }
+  }
+
+  const updateCardDrag = (event: ReactPointerEvent<HTMLElement>) => {
+    const dragState = dragStateRef.current
+    if (!dragState || dragState.pointerId !== event.pointerId) {
+      return
+    }
+    const nextPosition = clampCardPosition({
+      left: dragState.startLeft + event.clientX - dragState.startX,
+      top: dragState.startTop + event.clientY - dragState.startY
+    })
+    setCardPosition(nextPosition)
+  }
+
+  const finishCardDrag = (event: ReactPointerEvent<HTMLElement>) => {
+    const dragState = dragStateRef.current
+    if (!dragState || dragState.pointerId !== event.pointerId) {
+      return
+    }
+    dragStateRef.current = null
+    const nextPosition = clampCardPosition({
+      left: dragState.startLeft + event.clientX - dragState.startX,
+      top: dragState.startTop + event.clientY - dragState.startY
+    })
+    setCardPosition(nextPosition)
+    void saveStoredCardPosition(nextPosition).catch((error: unknown) => {
+      console.error(`${UI_LOG_PREFIX} card_position_save_failed`, {
+        message: error instanceof Error ? error.message : String(error)
+      })
+    })
+    try {
+      event.currentTarget.releasePointerCapture(event.pointerId)
+    } catch {
+      // Pointer capture may already be released by the browser.
+    }
   }
 
   useEffect(() => {
@@ -409,7 +552,25 @@ const MainWorldSelectionTranslator = () => {
   }, [])
 
   useEffect(() => {
-    const updateFromSelection = () => {
+    let cancelled = false
+    loadStoredCardPosition()
+      .then((storedPosition) => {
+        if (!cancelled && storedPosition) {
+          setCardPosition(storedPosition)
+        }
+      })
+      .catch((error: unknown) => {
+        console.error(`${UI_LOG_PREFIX} card_position_load_failed`, {
+          message: error instanceof Error ? error.message : String(error)
+        })
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [])
+
+  useEffect(() => {
+    const updateFromSelection = (pointerPosition?: PointerPosition) => {
       const selection = window.getSelection()
       const startedAt = Date.now()
       const traceId = activeTraceIdRef.current ?? createTraceId()
@@ -431,32 +592,15 @@ const MainWorldSelectionTranslator = () => {
           setSelectedText("")
           setPosition(null)
           setTranslationState(null)
+          setSaveState("idle")
         }
         return
       }
 
       const range = selection.getRangeAt(0)
       const text = selection.toString().trim()
-      const wordCount = text
-        .split(/\s+/)
-        .map((item) => item.trim())
-        .filter(Boolean).length
-
-      if (!isSupportedSelection(text)) {
-        if (text) {
-          emitUiPhase("ui_selection_rejected", traceId, startedAt, {
-            reason: "unsupported_selection",
-            textLength: text.length,
-            wordCount
-          })
-        }
-        if (!showCard) {
-          setSelectedText("")
-          setPosition(null)
-          setTranslationState(null)
-        }
-        return
-      }
+      const selectionSupport = getSelectionSupport(text)
+      const wordCount = selectionSupport.wordCount
 
       const selectionRect = range.getBoundingClientRect()
       const rect = {
@@ -479,6 +623,7 @@ const MainWorldSelectionTranslator = () => {
           setSelectedText("")
           setPosition(null)
           setTranslationState(null)
+          setSaveState("idle")
         }
         return
       }
@@ -487,7 +632,9 @@ const MainWorldSelectionTranslator = () => {
         width: window.innerWidth,
         height: window.innerHeight
       }
-      const nextPos = computeMarkerPositionFromRect(rect, viewport)
+      const nextPos = pointerPosition
+        ? computeMarkerPositionFromPointer(pointerPosition, viewport)
+        : computeMarkerPositionFromRect(rect, viewport)
       if (!nextPos) {
         emitUiPhase("ui_selection_rejected", traceId, startedAt, {
           reason: "marker_position_unavailable",
@@ -502,6 +649,34 @@ const MainWorldSelectionTranslator = () => {
           setSelectedText("")
           setPosition(null)
           setTranslationState(null)
+          setSaveState("idle")
+        }
+        return
+      }
+
+      if (!selectionSupport.supported) {
+        if (text) {
+          emitUiPhase("ui_selection_rejected", traceId, startedAt, {
+            reason: selectionSupport.reason ?? "unsupported_selection",
+            textLength: selectionSupport.textLength,
+            wordCount,
+            paragraphCount: selectionSupport.paragraphCount
+          })
+        }
+        if (!showCard && selectionSupport.reason && selectionSupport.reason !== "empty") {
+          setSelectedText(text)
+          setPosition(nextPos)
+          setSelectionNotice(getSelectionNotice(selectionSupport.reason))
+          setTranslationState(null)
+          setSaveState("idle")
+          return
+        }
+        if (!showCard) {
+          setSelectedText("")
+          setPosition(null)
+          setSelectionNotice(null)
+          setTranslationState(null)
+          setSaveState("idle")
         }
         return
       }
@@ -515,22 +690,37 @@ const MainWorldSelectionTranslator = () => {
         rectBottom: rect.bottom,
         markerLeft: nextPos.left,
         markerTop: nextPos.top,
+        pointerX: pointerPosition?.x ?? null,
+        pointerY: pointerPosition?.y ?? null,
         viewportWidth: window.innerWidth,
         viewportHeight: window.innerHeight
       })
       setSelectedText(text)
       setPosition(nextPos)
+      setSelectionNotice(null)
       setTranslationState(null)
+      setSaveState("idle")
     }
 
     const hideAll = () => {
       setSelectedText("")
       setPosition(null)
       setShowCard(false)
+      setSelectionNotice(null)
       setTranslationState(null)
+      setSaveState("idle")
     }
 
-    const onMouseUp = () => updateFromSelection()
+    const onMouseUp = (event: MouseEvent) => {
+      const target = event.target
+      if (
+        target instanceof Node &&
+        (cardRef.current?.contains(target) || dotRef.current?.contains(target))
+      ) {
+        return
+      }
+      updateFromSelection({ x: event.clientX, y: event.clientY })
+    }
     const onKeyUp = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
         closeCard("escape")
@@ -593,7 +783,7 @@ const MainWorldSelectionTranslator = () => {
   }, [showCard])
 
   useEffect(() => {
-    if (!showCard || !selectedText || translationState) {
+    if (!showCard || !selectedText || translationState || selectionNotice) {
       return
     }
 
@@ -670,7 +860,8 @@ const MainWorldSelectionTranslator = () => {
             card: result.data.card,
             detectedSourceLang: result.data.detectedSourceLang,
             provider: result.data.provider,
-            fallbackUsed: result.data.fallbackUsed
+            fallbackUsed: result.data.fallbackUsed,
+            riskNotices: result.data.riskNotices
           })
           if (!firstResultLoggedRef.current) {
             firstResultLoggedRef.current = true
@@ -713,15 +904,22 @@ const MainWorldSelectionTranslator = () => {
           errorCode: "UNKNOWN"
         })
       })
-  }, [showCard, selectedText, translationState])
+  }, [selectionNotice, selectedText, showCard, translationState])
 
   if (!overlayRoot || !position || !selectedText) {
     return null
   }
 
+  const resolvedCardPosition = cardPosition ? clampCardPosition(cardPosition) : defaultCardPosition(position)
   const data = buildDryRunTranslation(selectedText)
   const flashCardMode = isFlashCardSelection(selectedText)
   const shouldShowPlaceholderDetails = translationState?.status === "error"
+  const shouldShowSelectionNotice = Boolean(selectionNotice)
+  const providerLabel = shouldShowSelectionNotice
+    ? "not requested"
+    : translationState?.status
+      ? translationState.provider
+      : "pending"
   const translatedCard =
     translationState?.status === "success"
       ? translationState.card
@@ -731,9 +929,65 @@ const MainWorldSelectionTranslator = () => {
   const displayedPhonetic = translatedCard?.phonetic || data.phonetic
   const displayedMeaning =
     translatedCard?.meaning || (translationState?.status === "success" ? translationState.translatedText : data.shortMeaning)
+  const displayedLiteral = translatedCard?.literal ?? ""
+  const displayedNote = translatedCard?.note ?? ""
   const displayedExample = translatedCard?.example || data.example
+  const riskNotices =
+    translationState?.status === "success" ? (translationState.riskNotices ?? []) : []
   const shouldShowCardDetails =
     translationState?.status === "success" || translationState?.status === "streaming"
+  const canSaveVocabulary =
+    flashCardMode &&
+    translationState?.status === "success" &&
+    Boolean(translationState.card) &&
+    saveState !== "saving"
+  const saveButtonLabel =
+    saveState === "saving"
+      ? "Saving..."
+      : saveState === "saved"
+        ? "Saved to notebook"
+        : saveState === "updated"
+          ? "Updated in notebook"
+          : saveState === "error"
+            ? "Save failed"
+            : "Save to notebook"
+  const handleSaveVocabulary = async () => {
+    if (!flashCardMode || translationState?.status !== "success" || !translationState.card) {
+      return
+    }
+
+    setSaveState("saving")
+    try {
+      const wordCount = getWordCount(selectedText)
+      const result = await saveVocabularyEntry({
+        sourceText: selectedText,
+        translation: translationState.translatedText,
+        phonetic: translationState.card.phonetic,
+        explanation: translationState.card.meaning,
+        literal: translationState.card.literal,
+        note: translationState.card.note,
+        example: translationState.card.example,
+        selectionType: wordCount <= 1 ? "word" : "phrase",
+        sourceUrl: window.location.href,
+        sourceTitle: document.title,
+        contextText: getSelectionContextText()
+      })
+      setSaveState(result.created ? "saved" : "updated")
+      const traceId = activeTraceIdRef.current
+      const startedAt = flowStartAtRef.current
+      if (traceId && startedAt) {
+        emitUiPhase("ui_vocabulary_saved", traceId, startedAt, {
+          created: result.created,
+          normalizedText: result.entry.normalizedText
+        })
+      }
+    } catch (error) {
+      setSaveState("error")
+      console.error(`${UI_LOG_PREFIX} vocabulary_save_failed`, {
+        message: error instanceof Error ? error.message : String(error)
+      })
+    }
+  }
   const renderLinePlaceholder = (testId: string) => (
     <div
       data-testid={testId}
@@ -772,7 +1026,14 @@ const MainWorldSelectionTranslator = () => {
       </div>
 
       {showCard ? (
-        <section data-testid="translation-card" ref={cardRef} style={cardContainerStyle(position)}>
+        <section
+          data-testid="translation-card"
+          onPointerDown={(event) => startCardDrag(event, resolvedCardPosition)}
+          onPointerMove={updateCardDrag}
+          onPointerUp={finishCardDrag}
+          onPointerCancel={finishCardDrag}
+          ref={cardRef}
+          style={cardContainerStyle(resolvedCardPosition)}>
           <style>
             {`@keyframes translationShimmer{0%{background-position:100% 0}100%{background-position:-100% 0}}
             @keyframes translationCardEnter{0%{opacity:0;transform:translateY(8px) scale(0.985)}100%{opacity:1;transform:translateY(0) scale(1)}}`}
@@ -782,7 +1043,9 @@ const MainWorldSelectionTranslator = () => {
               alignItems: "center",
               display: "flex",
               justifyContent: "space-between",
-              marginBottom: 18
+              marginBottom: 12,
+              cursor: "grab",
+              userSelect: "none"
             }}>
             <div style={providerPillStyle}>
               <span
@@ -794,19 +1057,18 @@ const MainWorldSelectionTranslator = () => {
                   display: "inline-flex",
                   fontSize: 11,
                   fontWeight: 700,
-                  height: 24,
+                  height: 22,
                   justifyContent: "center",
-                  width: 24,
+                  width: 22,
                   boxShadow: `0 6px 14px ${ACCENT_SHADOW}`
                 }}>
                 翻
               </span>
-              <div style={{ display: "grid", gap: 2 }}>
-                <span style={{ color: "#6a5a70", fontSize: 10, letterSpacing: "0.08em", textTransform: "uppercase" }}>
-                  Quick Translate
-                </span>
-                <span style={{ color: "#342938", fontSize: 13 }}>
-                  {flashCardMode ? "Live Flash Card" : "Live Sentence Translation"}
+              <div style={{ display: "grid", gap: 1 }}>
+                <span
+                  data-testid="translation-card-title"
+                  style={{ color: "#342938", fontSize: 13, lineHeight: 1.15 }}>
+                  Live translation
                 </span>
               </div>
             </div>
@@ -818,10 +1080,10 @@ const MainWorldSelectionTranslator = () => {
                   border: "1px solid rgba(106,90,112,0.1)",
                   borderRadius: 999,
                   color: "#76667b",
-                  fontSize: 11,
-                  padding: "7px 10px"
+                  fontSize: 10,
+                  padding: "6px 9px"
                 }}>
-                Provider: {translationState?.status ? translationState.provider : "pending"} · Model: {FLASH_MODEL}
+                Provider: {providerLabel} · Model: {FLASH_MODEL}
               </span>
               <button
                 aria-label="Close translation card"
@@ -833,13 +1095,13 @@ const MainWorldSelectionTranslator = () => {
           </header>
 
           <div style={{ marginBottom: 18 }}>
-            <div style={{ marginBottom: 14 }}>
+            <div style={{ marginBottom: 10 }}>
               <p
                 style={{
                   color: "#7d7082",
-                  fontSize: 11,
+                  fontSize: 10,
                   letterSpacing: "0.08em",
-                  margin: "0 0 6px",
+                  margin: "0 0 5px",
                   textTransform: "uppercase"
                 }}>
                 Selected text
@@ -848,10 +1110,10 @@ const MainWorldSelectionTranslator = () => {
                 style={{
                   display: "block",
                   fontFamily: flashCardMode ? DISPLAY_FONT_STACK : CARD_FONT_STACK,
-                  fontSize: flashCardMode ? 34 : 20,
-                  fontWeight: flashCardMode ? 600 : 500,
+                  fontSize: flashCardMode ? 24 : 15,
+                  fontWeight: flashCardMode ? 650 : 500,
                   letterSpacing: "-0.02em",
-                  lineHeight: flashCardMode ? 1.1 : 1.35
+                  lineHeight: flashCardMode ? 1.16 : 1.4
                 }}>
                 {data.source}
               </strong>
@@ -863,10 +1125,10 @@ const MainWorldSelectionTranslator = () => {
                   display: "grid",
                   gap: 10,
                   marginTop: 4,
-                  padding: "16px 16px 14px",
+                  padding: "13px 14px 12px",
                   background: "rgba(247,243,247,0.92)",
                   border: "1px solid rgba(111,96,121,0.08)",
-                  borderRadius: 20
+                  borderRadius: 16
                 }}>
                 {(flashCardMode ? [0, 1, 2] : [0, 1]).map((item) => (
                   <div
@@ -899,15 +1161,15 @@ const MainWorldSelectionTranslator = () => {
                   style={{
                     background: "rgba(247,243,247,0.92)",
                     border: "1px solid rgba(111,96,121,0.08)",
-                    borderRadius: 20,
-                    padding: "16px 16px 14px"
+                    borderRadius: 16,
+                    padding: "13px 14px 12px"
                   }}>
                   <div
                     style={{
                       color: "#8a7d8f",
                       fontSize: 10,
                       letterSpacing: "0.08em",
-                      marginBottom: 10,
+                      marginBottom: 8,
                       textTransform: "uppercase"
                     }}>
                     {flashCardMode ? "Translation card" : "Translation"}
@@ -920,8 +1182,8 @@ const MainWorldSelectionTranslator = () => {
                           style={{
                             color: "#736779",
                             fontFamily: DISPLAY_FONT_STACK,
-                            fontSize: 18,
-                            margin: "0 0 10px"
+                            fontSize: 15,
+                            margin: "0 0 8px"
                           }}>
                           {displayedPhonetic}
                         </p>
@@ -933,10 +1195,10 @@ const MainWorldSelectionTranslator = () => {
                       data-testid="translation-line-meaning"
                       style={{
                         color: "#2f2732",
-                        fontSize: flashCardMode ? 18 : 17,
-                        fontWeight: flashCardMode ? 600 : 500,
+                        fontSize: flashCardMode ? 16 : 14,
+                        fontWeight: flashCardMode ? 650 : 500,
                         lineHeight: 1.45,
-                        margin: flashCardMode ? "10px 0" : 0
+                        margin: flashCardMode ? "8px 0" : 0
                       }}>
                       {displayedMeaning}
                     </p>
@@ -945,6 +1207,18 @@ const MainWorldSelectionTranslator = () => {
                       {renderLinePlaceholder("translation-line-meaning-loading")}
                     </div>
                   )}
+                  {flashCardMode && displayedLiteral ? (
+                    <p
+                      data-testid="translation-line-literal"
+                      style={{
+                        color: "#7a6d80",
+                        fontSize: 12,
+                        lineHeight: 1.45,
+                        margin: "8px 0 0"
+                      }}>
+                      Literal: {displayedLiteral}
+                    </p>
+                  ) : null}
                   {flashCardMode
                     ? translatedCard?.example
                       ? (
@@ -952,9 +1226,9 @@ const MainWorldSelectionTranslator = () => {
                           data-testid="translation-line-example"
                           style={{
                             color: "#5c515f",
-                            fontSize: 15,
-                            lineHeight: 1.58,
-                            margin: "10px 0 0"
+                            fontSize: 13,
+                            lineHeight: 1.55,
+                            margin: "8px 0 0"
                           }}>
                           {displayedExample}
                         </p>
@@ -965,7 +1239,108 @@ const MainWorldSelectionTranslator = () => {
                         </div>
                       )
                     : null}
+                  {flashCardMode && displayedNote ? (
+                    <div
+                      data-testid="translation-line-note"
+                      style={{
+                        background: "rgba(255, 177, 100, 0.14)",
+                        border: "1px solid rgba(223,111,47,0.14)",
+                        borderRadius: 14,
+                        color: "#6d4b34",
+                        fontSize: 12,
+                        lineHeight: 1.5,
+                        marginTop: 10,
+                        padding: "9px 11px"
+                      }}>
+                      <strong style={{ display: "block", fontSize: 11, letterSpacing: "0.06em", marginBottom: 4, textTransform: "uppercase" }}>
+                        Usage note
+                      </strong>
+                      {displayedNote}
+                    </div>
+                  ) : null}
                 </div>
+                {riskNotices.length > 0 ? (
+                  <div
+                    data-testid="translation-risk-notice"
+                    style={{
+                      background: "linear-gradient(180deg, rgba(255, 246, 226, 0.96), rgba(255, 239, 213, 0.9))",
+                      border: "1px solid rgba(218, 139, 47, 0.22)",
+                      borderRadius: 18,
+                      color: "#684522",
+                      fontSize: 12,
+                      lineHeight: 1.52,
+                      marginTop: 10,
+                      padding: "10px 12px"
+                    }}>
+                    <strong
+                      style={{
+                        color: "#8b5522",
+                        display: "block",
+                        fontSize: 11,
+                        letterSpacing: "0.07em",
+                        marginBottom: 6,
+                        textTransform: "uppercase"
+                      }}>
+                      可能存在特殊表达
+                    </strong>
+                    <p style={{ margin: "0 0 8px" }}>
+                      这段翻译里可能包含俚语、习语、领域术语或不适合直译的表达。上方译文可以先参考，
+                      但这些部分如果按字面理解，可能会造成误解。
+                    </p>
+                    {riskNotices.slice(0, 2).map((notice, index) => (
+                      <p
+                        key={`${notice.source}-${index}`}
+                        style={{
+                          margin: index === 0 ? 0 : "8px 0 0"
+                        }}>
+                        <strong>{notice.source}</strong>
+                        {" "}可能是特殊表达。如果整句意思感觉不顺，建议重点核对这一部分。
+                      </p>
+                    ))}
+                  </div>
+                ) : null}
+                {flashCardMode && translationState.status === "success" ? (
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginTop: 12 }}>
+                    <button
+                      data-testid="save-vocabulary-entry"
+                      disabled={!canSaveVocabulary}
+                      onClick={() => {
+                        handleSaveVocabulary().catch((error) => {
+                          setSaveState("error")
+                          console.error(`${UI_LOG_PREFIX} vocabulary_save_failed`, {
+                            message: error instanceof Error ? error.message : String(error)
+                          })
+                        })
+                      }}
+                      style={{
+                        alignItems: "center",
+                        background:
+                          saveState === "saved" || saveState === "updated"
+                            ? "linear-gradient(135deg, #f6c47c 0%, #f3a45b 100%)"
+                            : "rgba(255,255,255,0.84)",
+                        border: "1px solid rgba(111,96,121,0.12)",
+                        borderRadius: 999,
+                        boxShadow:
+                          saveState === "saved" || saveState === "updated"
+                            ? `0 10px 24px ${ACCENT_SHADOW}`
+                            : "none",
+                        color: saveState === "saved" || saveState === "updated" ? "#fff" : "#5d5362",
+                        cursor: canSaveVocabulary ? "pointer" : "default",
+                        display: "inline-flex",
+                        fontFamily: CARD_FONT_STACK,
+                        fontSize: 12,
+                        fontWeight: 700,
+                        gap: 8,
+                        opacity: canSaveVocabulary ? 1 : 0.72,
+                        padding: "9px 12px",
+                        transition: "all 140ms ease"
+                      }}
+                      type="button">
+                      <span aria-hidden="true">★</span>
+                      {saveButtonLabel}
+                    </button>
+                  </div>
+                ) : null}
                 <p style={{ color: "#7b707f", fontSize: 11, margin: "10px 0 0" }}>
                   Provider: {translationState.provider.replace("_", " ")} · Model: {FLASH_MODEL}
                 </p>
@@ -987,6 +1362,32 @@ const MainWorldSelectionTranslator = () => {
                   {translationState.message}
                 </p>
               </>
+            ) : null}
+            {shouldShowSelectionNotice ? (
+              <div
+                data-testid="translation-selection-notice"
+                style={{
+                  background: "rgba(247,243,247,0.92)",
+                  border: "1px solid rgba(111,96,121,0.08)",
+                  borderRadius: 20,
+                  padding: "16px 16px 14px"
+                }}>
+                <p
+                  data-testid="translation-selection-notice-title"
+                  style={{
+                    color: "#9a5a2d",
+                    fontSize: 16,
+                    fontWeight: 600,
+                    margin: "0 0 8px"
+                  }}>
+                  {selectionNotice?.title}
+                </p>
+                <p
+                  data-testid="translation-selection-notice-message"
+                  style={{ color: "#6f6475", fontSize: 13, lineHeight: 1.5, margin: 0 }}>
+                  {selectionNotice?.message}
+                </p>
+              </div>
             ) : null}
           </div>
 
