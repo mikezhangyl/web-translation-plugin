@@ -19,7 +19,17 @@ export type TranslationEnvDefaultsRequest = {
 export type TranslationCard = {
   phonetic: string
   meaning: string
+  literal?: string
+  note?: string
   example: string
+}
+
+export type TranslationRiskNotice = {
+  source: string
+  translation?: string
+  reason: string
+  suggestedMeaning?: string
+  risk: "low" | "medium" | "high"
 }
 
 export type TranslateResponse = {
@@ -28,6 +38,7 @@ export type TranslateResponse = {
   provider: TranslationProvider
   fallbackUsed: boolean
   card?: TranslationCard
+  riskNotices?: TranslationRiskNotice[]
   errorCode?: string
 }
 

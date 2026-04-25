@@ -4,6 +4,7 @@ import type {
   TranslateRequest,
   TranslationCard,
   TranslationMessageResponse,
+  TranslationRiskNotice,
   TranslationStreamServerMessage
 } from "../lib/translation-contract"
 import { TranslationRequestQueue } from "../lib/translation-request-queue"
@@ -75,6 +76,7 @@ type TranslationState =
       detectedSourceLang?: string
       provider: "openai_compatible" | "anthropic_compatible"
       fallbackUsed: boolean
+      riskNotices?: TranslationRiskNotice[]
     }
   | {
       status: "error"
@@ -728,7 +730,8 @@ const MainWorldSelectionTranslator = () => {
             card: result.data.card,
             detectedSourceLang: result.data.detectedSourceLang,
             provider: result.data.provider,
-            fallbackUsed: result.data.fallbackUsed
+            fallbackUsed: result.data.fallbackUsed,
+            riskNotices: result.data.riskNotices
           })
           if (!firstResultLoggedRef.current) {
             firstResultLoggedRef.current = true
@@ -795,7 +798,11 @@ const MainWorldSelectionTranslator = () => {
   const displayedPhonetic = translatedCard?.phonetic || data.phonetic
   const displayedMeaning =
     translatedCard?.meaning || (translationState?.status === "success" ? translationState.translatedText : data.shortMeaning)
+  const displayedLiteral = translatedCard?.literal ?? ""
+  const displayedNote = translatedCard?.note ?? ""
   const displayedExample = translatedCard?.example || data.example
+  const riskNotices =
+    translationState?.status === "success" ? (translationState.riskNotices ?? []) : []
   const shouldShowCardDetails =
     translationState?.status === "success" || translationState?.status === "streaming"
   const canSaveVocabulary =
@@ -826,6 +833,8 @@ const MainWorldSelectionTranslator = () => {
         translation: translationState.translatedText,
         phonetic: translationState.card.phonetic,
         explanation: translationState.card.meaning,
+        literal: translationState.card.literal,
+        note: translationState.card.note,
         example: translationState.card.example,
         selectionType: wordCount <= 1 ? "word" : "phrase",
         sourceUrl: window.location.href,
@@ -1063,6 +1072,18 @@ const MainWorldSelectionTranslator = () => {
                       {renderLinePlaceholder("translation-line-meaning-loading")}
                     </div>
                   )}
+                  {flashCardMode && displayedLiteral ? (
+                    <p
+                      data-testid="translation-line-literal"
+                      style={{
+                        color: "#7a6d80",
+                        fontSize: 13,
+                        lineHeight: 1.45,
+                        margin: "8px 0 0"
+                      }}>
+                      Literal: {displayedLiteral}
+                    </p>
+                  ) : null}
                   {flashCardMode
                     ? translatedCard?.example
                       ? (
@@ -1083,7 +1104,66 @@ const MainWorldSelectionTranslator = () => {
                         </div>
                       )
                     : null}
+                  {flashCardMode && displayedNote ? (
+                    <div
+                      data-testid="translation-line-note"
+                      style={{
+                        background: "rgba(255, 177, 100, 0.14)",
+                        border: "1px solid rgba(223,111,47,0.14)",
+                        borderRadius: 14,
+                        color: "#6d4b34",
+                        fontSize: 13,
+                        lineHeight: 1.5,
+                        marginTop: 12,
+                        padding: "10px 12px"
+                      }}>
+                      <strong style={{ display: "block", fontSize: 11, letterSpacing: "0.06em", marginBottom: 4, textTransform: "uppercase" }}>
+                        Usage note
+                      </strong>
+                      {displayedNote}
+                    </div>
+                  ) : null}
                 </div>
+                {riskNotices.length > 0 ? (
+                  <div
+                    data-testid="translation-risk-notice"
+                    style={{
+                      background: "linear-gradient(180deg, rgba(255, 246, 226, 0.96), rgba(255, 239, 213, 0.9))",
+                      border: "1px solid rgba(218, 139, 47, 0.22)",
+                      borderRadius: 18,
+                      color: "#684522",
+                      fontSize: 13,
+                      lineHeight: 1.52,
+                      marginTop: 12,
+                      padding: "12px 14px"
+                    }}>
+                    <strong
+                      style={{
+                        color: "#8b5522",
+                        display: "block",
+                        fontSize: 11,
+                        letterSpacing: "0.07em",
+                        marginBottom: 6,
+                        textTransform: "uppercase"
+                      }}>
+                      可能存在特殊表达
+                    </strong>
+                    <p style={{ margin: "0 0 8px" }}>
+                      这段翻译里可能包含俚语、习语、领域术语或不适合直译的表达。上方译文可以先参考，
+                      但这些部分如果按字面理解，可能会造成误解。
+                    </p>
+                    {riskNotices.slice(0, 2).map((notice, index) => (
+                      <p
+                        key={`${notice.source}-${index}`}
+                        style={{
+                          margin: index === 0 ? 0 : "8px 0 0"
+                        }}>
+                        <strong>{notice.source}</strong>
+                        {" "}可能是特殊表达。如果整句意思感觉不顺，建议重点核对这一部分。
+                      </p>
+                    ))}
+                  </div>
+                ) : null}
                 {flashCardMode && translationState.status === "success" ? (
                   <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginTop: 12 }}>
                     <button

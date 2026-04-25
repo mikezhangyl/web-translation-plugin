@@ -230,6 +230,28 @@ const getE2EDependencies = (mode: NonNullable<TranslationMessage["payload"]["e2e
       mode === "anthropic_success"
         ? "这是一句用于 Anthropics 模拟测试的中文译文。"
         : "这是一句用于 OpenAI 模拟测试的中文译文。"
+    const firstMessage = String(body.messages?.[0]?.content ?? "")
+    const riskReviewPayload = JSON.stringify({
+      suspicious_terms: [
+        {
+          source: "mock expression",
+          translation: "模拟表达",
+          reason: "Mocked review marks this as a possible special expression.",
+          suggested_meaning: "a mocked expression that may need extra attention",
+          risk: "medium"
+        }
+      ],
+      overall_assessment: "Mocked risk review."
+    })
+
+    if (firstMessage.includes("MACHINE_TRANSLATION:")) {
+      return new Response(
+        JSON.stringify({
+          choices: [{ message: { content: riskReviewPayload } }]
+        }),
+        { status: 200, headers: { "Content-Type": "application/json" } }
+      )
+    }
 
     if (cfg.providerFlavor === "anthropic-compatible") {
       return new Response(

@@ -26,3 +26,8 @@ superseded_by: []
   - newest, oldest, A-Z, and Z-A sorting
   - delete action
 - Added logic and mock browser coverage for storage helpers and the save/list/sort/delete path.
+- Extended flash-card semantics for non-literal expressions:
+  - natural meaning remains the primary displayed meaning
+  - optional literal translation can be shown when useful
+  - optional usage note explains idioms, slang, cultural expressions, and domain-specific phrases
+  - vocabulary history persists the added literal and note fields

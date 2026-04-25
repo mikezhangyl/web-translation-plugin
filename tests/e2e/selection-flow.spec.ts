@@ -212,6 +212,8 @@ test("selection flow shows sentence translation without phonetic or example", as
     await expect(card.getByTestId("translation-line-meaning")).toHaveText("这是一句用于 OpenAI 模拟测试的中文译文。")
     await expect(card.getByTestId("translation-line-phonetic")).toHaveCount(0)
     await expect(card.getByTestId("translation-line-example")).toHaveCount(0)
+    await expect(card.getByTestId("translation-risk-notice")).toBeVisible()
+    await expect(card.getByTestId("translation-risk-notice")).toContainText("可能存在特殊表达")
     await attachScreenshot(page, testInfo, "e2e-openai-sentence-success")
   })
 })

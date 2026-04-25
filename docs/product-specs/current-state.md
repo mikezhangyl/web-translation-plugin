@@ -23,6 +23,8 @@
   - translation
   - phonetic
   - explanation
+  - optional literal translation
+  - optional usage note for non-literal expressions
   - example
   - optional source URL/title/context
   - created and updated timestamps
@@ -43,8 +45,14 @@
 - Uses flash-card output from `qwen-mt-flash`.
 - Card shape:
   - phonetic
-  - meaning
+  - natural meaning
+  - optional literal translation
+  - optional usage note
   - example
+- Flash-card meaning should prefer natural Chinese semantics over word-by-word literal translation.
+- For idioms, workplace slang, cultural expressions, domain terms, or phrases that would mislead if translated literally, the card should include:
+  - `literal`: short literal translation when useful
+  - `note`: explanation of what the expression commonly means in English and why literal translation is insufficient
 - Streaming partial card updates are acceptable before the final response settles.
 
 ### Sentence
@@ -55,6 +63,13 @@
   - translated sentence only
   - no phonetic row
   - no example row
+- Qwen MT sentence translations run a second lightweight self-review pass after the main translation.
+- If the self-review flags likely slang, idioms, neologisms, domain terms, metaphors, or misleading literal translations, the UI shows a warning below the translation.
+- Risk warnings are treated as candidate notices only:
+  - they do not replace the main translation
+  - they do not claim semantic certainty
+  - they show that a source expression may need extra attention, not the model's proposed explanation as fact
+  - they should not be used as canonical term explanations without stronger glossary or source verification
 
 ### Paragraph
 
@@ -107,6 +122,7 @@
 
 - Paragraph translation remains constrained and is not yet productized beyond the single-paragraph limit contract.
 - Vocabulary history is local-device only; there is no account sync, export, spaced repetition, or dashboard view yet.
+- Sentence risk notices are heuristic model self-review output. They are useful for warning that a phrase may need extra attention, but they are not a reliable source of the correct meaning.
 - Provider knowledge is more stable than before, but there is still no dedicated long-lived provider-facts template beyond the core docs.
 - Benchmark/comparison settings remain diagnostics-oriented and are not the main user-visible acceptance path.
 - Troubleshooting logs intentionally help diagnosis, but they can expose selected text, translated text, URLs, and timing details.

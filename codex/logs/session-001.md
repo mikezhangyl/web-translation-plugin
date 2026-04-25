@@ -907,3 +907,166 @@ Correct the harness terminology from the ambiguous "LLM behavior change" to the 
 
 ### Result
 Success. Harness terminology now uses "LLM invocation changes" and explicitly scopes the rule to product-side model calls and response interpretation.
+
+## Step 17
+
+### User Instruction
+```text
+把这个前置commit掉,然后我们就开始测试一下,好吧,这个新的prompt。我刚才对结果问完,你告诉我,你测试结果需要是一个简单的一个plain text文档,里面输出就是prompt是什么,对吧,测试数据是什么,然后输出结果是什么,好吧。
+```
+
+### Understanding
+Commit the probe-first harness rule separately, then run a real provider prompt probe and save a simple plain text report containing the prompt, test data, provider output, and assessment.
+
+### Plan
+1. Commit only the harness rule files, leaving unconfirmed prompt/product code uncommitted.
+2. Run a real Qwen provider probe with the candidate prompt and representative inputs.
+3. Save the prompt, test data, outputs, and assessment as a plain text document.
+4. Validate docs and memory checks.
+
+### Actions Taken
+- Created commit `44797e0 docs: require provider probes for llm invocation changes`.
+- Ran a real Qwen `qwen-mt-flash` provider probe with:
+  - `coffee badging`
+  - the full MS Teams/HR sentence containing `coffee badging`
+  - `performance`
+  - a normal project-progress sentence
+- Saved probe results to `docs/references/coffee-badging-prompt-probe-2026-04-24.txt`.
+- Marked the candidate prompt as failed because it misunderstood `coffee badging` and produced noisy notes for ordinary inputs.
+
+### Validation
+- `npm run check:docs`: PASS
+- `npm run check:memory`: PASS
+
+### Result
+Success. The first real provider prompt probe is captured in a plain text report and the candidate prompt is explicitly marked as failed.
+
+## Step 18
+
+### User Instruction
+```text
+OK,那么这个模型翻译输出的数据里面有没有可信度,confidence,你试试看。
+```
+
+### Understanding
+Probe the real Qwen provider response to determine whether confidence is available as a native response field, whether `logprobs` is supported, and whether a prompt-requested `confidence` value is merely self-reported.
+
+### Plan
+1. Run direct provider probes without changing product code.
+2. Test default response metadata, `logprobs`, and prompt-requested confidence.
+3. Save the raw request/output summary as a plain text reference report.
+4. Validate docs and memory checks.
+
+### Actions Taken
+- Started confidence probe.
+- Ran three real Qwen `qwen-mt-flash` probes:
+  - default translation response
+  - `logprobs: true` response
+  - prompt-requested self-reported `confidence`
+- Observed that default responses have no semantic confidence field.
+- Observed that token-level `logprobs` can be returned but were high for the wrong literal translation `咖啡徽章`.
+- Observed that prompt-requested self-reported confidence returned `0.95` for the wrong literal translation.
+- Saved the plain text report to `docs/references/qwen-confidence-probe-2026-04-24.txt`.
+
+### Validation
+- `npm run check:docs`: PASS
+- `npm run check:memory`: PASS
+
+### Result
+Success. Qwen does not expose a trustworthy semantic confidence score; self-reported confidence and token logprobs are not reliable indicators of translation correctness.
+
+## Step 19
+
+### User Instruction
+```text
+那么你把你测试一个prompt,对吧,在这个MT的模型翻译以后,你能够自己review一下自己的模型,对吧,然后把可疑的词汇指出来,看它有没有这种能力。
+```
+
+### Understanding
+Run a provider probe without changing product code to test whether the MT model can translate first and then review its own translation for suspicious slang, idioms, domain terms, or misleading literal translations.
+
+### Plan
+1. Use the current Qwen provider credentials from `.env.local`.
+2. Run a two-stage probe: translation first, then same-model self-review using source plus machine translation.
+3. Test `coffee badging`, an ordinary sentence, business/domain terminology, and a common idiom.
+4. Save the prompt, test data, raw outputs, and conclusion as a plain text reference report.
+
+### Actions Taken
+- Attempted the probe with `system` messages and observed that Qwen MT compatible API rejects `system` role for this model family.
+- Re-ran the probe using a single `user` message containing instructions and input.
+- Tested both `qwen-mt-flash` and `qwen-mt-plus`.
+- Saved the report to `docs/references/qwen-mt-self-review-probe-2026-04-24.txt`.
+- Added the probe report to `docs/references/index.md`.
+
+### Validation
+- `npm run check:docs`: PASS
+- `npm run check:memory`: PASS
+
+### Result
+Success. The model can surface candidate risky expressions, but the probe shows self-review is not reliable enough as a source of truth because `qwen-mt-flash` flagged `coffee badging` while explaining it incorrectly.
+
+## Step 20
+
+### User Instruction
+```text
+我看了结果,它确实还不错,就是虽然那些俚语没有被正确翻译,但是至少能够识别出那些翻译可能会造成误解的那些俚语,那么我们就可以在界面上这么做,就是上面正常显示翻译,下面显示一个提示,这这这单词可能是一个就是特殊词汇或者俚语,再次翻译可能不准确,对吧,我就希望这样做就可以了
+```
+
+### Understanding
+Implement sentence-level risk notices based on the confirmed provider probe: keep the normal translation as the primary output, then show a caution below it when the MT self-review flags possible slang, idioms, domain terms, or misleading literal translations.
+
+### Plan
+1. Add tests first for service response risk notices and UI display in mock E2E.
+2. Add a `riskNotices` response field and Qwen MT self-review pass for sentence translations.
+3. Render a non-authoritative warning below sentence translations when notices exist.
+4. Update durable product and requirement memory.
+5. Validate with unit/UI logic tests, build, mock E2E, docs, and memory checks.
+
+### Actions Taken
+- Added `TranslationRiskNotice` and optional `riskNotices` to translation responses.
+- Added a second Qwen MT self-review request after successful non-flash-card Qwen sentence translations.
+- Parsed `suspicious_terms` into safe warning notices.
+- Made review failures non-blocking so the main translation still succeeds.
+- Added a sentence-card warning block below the main translation.
+- Tightened the warning display after live probing showed Qwen can flag `coffee badgers` while still explaining it incorrectly; the UI now avoids presenting the model's proposed meaning as fact.
+- Updated mock E2E provider behavior to exercise the warning path.
+- Added a new `translation-risk-notices` requirement stream and updated current product state plus timeline.
+
+### Validation
+- `npm run test:ui-logic`: PASS
+- `npm run build`: PASS
+- `npm run test:e2e:mock`: PASS
+- Live Qwen service probe: PASS for integration path; returned one `riskNotice` for `coffee badgers`, but with an unreliable explanation, confirming the UI should remain caution-only.
+- `npm run check:docs`: PASS
+- `npm run check:memory`: PASS
+
+### Result
+Success. Product behavior now matches the requested design: normal translation remains primary, and model self-review only adds a cautionary special-expression warning when suspicious terms are detected.
+
+## Step 21
+
+### User Instruction
+```text
+现在的提示非常不错， 但是语言是英语的， 这个 caution 应该是和目标翻译语言保持一致。
+```
+
+### Understanding
+Fix the risk-notice UI language so the caution text matches the target translation language. The current product target is `zh-CN`, so the warning should be in Simplified Chinese.
+
+### Plan
+1. Update the E2E assertion to expect Chinese risk-notice copy.
+2. Change the UI risk-notice title, body, and per-expression line to Chinese.
+3. Validate build, mock E2E, and session memory.
+
+### Actions Taken
+- Updated the mock E2E expectation from `Possible special expression` to `可能存在特殊表达`.
+- Replaced the risk-notice UI copy with Simplified Chinese.
+- Kept the warning caution-only and did not expose the model's guessed explanation as fact.
+
+### Validation
+- `npm run build`: PASS
+- `npm run test:e2e:mock`: PASS
+- `npm run check:memory`: PASS
+
+### Result
+Success. The risk notice now matches the current `zh-CN` target-language surface.

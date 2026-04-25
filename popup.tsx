@@ -826,9 +826,29 @@ function IndexPopup() {
                     {entry.explanation}
                   </p>
                 ) : null}
+                {entry.literal ? (
+                  <p style={{ color: "#7a6f80", fontSize: 11, lineHeight: 1.45, margin: "6px 0 0" }}>
+                    Literal: {entry.literal}
+                  </p>
+                ) : null}
                 {entry.example ? (
                   <p style={{ color: "#5f5464", fontSize: 12, lineHeight: 1.5, margin: "8px 0 0" }}>
                     {entry.example}
+                  </p>
+                ) : null}
+                {entry.note ? (
+                  <p
+                    style={{
+                      background: "rgba(255, 177, 100, 0.12)",
+                      border: "1px solid rgba(223,111,47,0.12)",
+                      borderRadius: 12,
+                      color: "#6d4b34",
+                      fontSize: 11,
+                      lineHeight: 1.45,
+                      margin: "8px 0 0",
+                      padding: "8px 10px"
+                    }}>
+                    {entry.note}
                   </p>
                 ) : null}
                 <p style={{ color: "#8a7d8f", fontSize: 10, margin: "10px 0 0" }}>

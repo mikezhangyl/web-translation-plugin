@@ -9,6 +9,8 @@ export type VocabularyEntry = {
   translation: string
   phonetic?: string
   explanation?: string
+  literal?: string
+  note?: string
   example?: string
   sourceUrl?: string
   sourceTitle?: string
@@ -23,6 +25,8 @@ export type VocabularyEntryInput = {
   translation: string
   phonetic?: string
   explanation?: string
+  literal?: string
+  note?: string
   example?: string
   sourceUrl?: string
   sourceTitle?: string
@@ -118,6 +122,8 @@ export const upsertVocabularyEntry = (
       translation: input.translation,
       phonetic: optionalString(input.phonetic),
       explanation: optionalString(input.explanation),
+      literal: optionalString(input.literal),
+      note: optionalString(input.note),
       example: optionalString(input.example),
       sourceUrl: optionalString(input.sourceUrl),
       sourceTitle: optionalString(input.sourceTitle),
@@ -140,6 +146,8 @@ export const upsertVocabularyEntry = (
     translation: input.translation,
     phonetic: optionalString(input.phonetic),
     explanation: optionalString(input.explanation),
+    literal: optionalString(input.literal),
+    note: optionalString(input.note),
     example: optionalString(input.example),
     sourceUrl: optionalString(input.sourceUrl),
     sourceTitle: optionalString(input.sourceTitle),
