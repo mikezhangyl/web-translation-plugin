@@ -18,6 +18,7 @@ export type VocabularyEntry = {
   selectionType: VocabularySelectionType
   createdAt: string
   updatedAt: string
+  deletedAt?: string
 }
 
 export type VocabularyEntryInput = {
@@ -41,6 +42,8 @@ export type VocabularyUpsertResult = {
 }
 
 export const VOCABULARY_STORAGE_KEY = "translation.vocabulary.entries"
+export const VOCABULARY_TRASH_RETENTION_DAYS = 15
+const VOCABULARY_TRASH_RETENTION_MS = VOCABULARY_TRASH_RETENTION_DAYS * 24 * 60 * 60 * 1000
 
 export const normalizeVocabularyText = (text: string) => text.trim().replace(/\s+/g, " ").toLowerCase()
 
@@ -105,6 +108,32 @@ export const sortVocabularyEntries = (
   return sorted
 }
 
+export const getActiveVocabularyEntries = (entries: readonly VocabularyEntry[]): VocabularyEntry[] =>
+  entries.filter((entry) => !entry.deletedAt)
+
+export const getDeletedVocabularyEntries = (entries: readonly VocabularyEntry[]): VocabularyEntry[] =>
+  entries.filter((entry) => Boolean(entry.deletedAt))
+
+export const purgeExpiredDeletedVocabularyEntries = (
+  entries: readonly VocabularyEntry[],
+  nowIso = new Date().toISOString()
+): VocabularyEntry[] => {
+  const nowMs = Date.parse(nowIso)
+
+  return entries.filter((entry) => {
+    if (!entry.deletedAt) {
+      return true
+    }
+
+    const deletedMs = Date.parse(entry.deletedAt)
+    if (!Number.isFinite(deletedMs) || !Number.isFinite(nowMs)) {
+      return true
+    }
+
+    return nowMs - deletedMs < VOCABULARY_TRASH_RETENTION_MS
+  })
+}
+
 export const upsertVocabularyEntry = (
   entries: readonly VocabularyEntry[],
   input: VocabularyEntryInput,
@@ -129,7 +158,8 @@ export const upsertVocabularyEntry = (
       sourceTitle: optionalString(input.sourceTitle),
       contextText: optionalString(input.contextText),
       selectionType: input.selectionType,
-      updatedAt: nowIso
+      updatedAt: nowIso,
+      deletedAt: undefined
     }
 
     return {
@@ -166,8 +196,18 @@ export const upsertVocabularyEntry = (
 
 export const deleteVocabularyEntry = (
   entries: readonly VocabularyEntry[],
-  entryId: string
-): VocabularyEntry[] => entries.filter((entry) => entry.id !== entryId)
+  entryId: string,
+  nowIso = new Date().toISOString()
+): VocabularyEntry[] =>
+  entries.map((entry) =>
+    entry.id === entryId
+      ? {
+          ...entry,
+          deletedAt: nowIso,
+          updatedAt: nowIso
+        }
+      : entry
+  )
 
 export const readVocabularyEntries = async (): Promise<VocabularyEntry[]> => {
   if (typeof chrome === "undefined" || !chrome.storage?.local) {
@@ -175,7 +215,12 @@ export const readVocabularyEntries = async (): Promise<VocabularyEntry[]> => {
   }
 
   const values = await chrome.storage.local.get([VOCABULARY_STORAGE_KEY])
-  return coerceVocabularyEntries(values[VOCABULARY_STORAGE_KEY])
+  const entries = coerceVocabularyEntries(values[VOCABULARY_STORAGE_KEY])
+  const prunedEntries = purgeExpiredDeletedVocabularyEntries(entries)
+  if (prunedEntries.length !== entries.length) {
+    await writeVocabularyEntries(prunedEntries)
+  }
+  return prunedEntries
 }
 
 export const writeVocabularyEntries = async (entries: readonly VocabularyEntry[]) => {

@@ -16,6 +16,10 @@ superseded_by: []
 
 Turn the local vocabulary notebook into a learning and reinforcement surface, not only a saved-word list. The review experience should help users remember words through original context, special-expression awareness, active recall, and lightweight spaced repetition.
 
+## Current Implementation Status
+
+Deferred. The immediate implementation priority is the simpler vocabulary notebook tracked by `docs/requirements/active/vocabulary-history/PRD.md`: dedicated notebook entry, time/alphabet sorting, flash-card fields, soft delete, and 15-day trash purge. Active recall, spaced repetition, and learning states remain future vocabulary-review scope.
+
 ## Target User
 
 - Primary first user: the owner of this extension.

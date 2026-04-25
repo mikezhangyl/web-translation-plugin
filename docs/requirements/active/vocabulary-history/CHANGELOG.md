@@ -31,3 +31,11 @@ superseded_by: []
   - optional literal translation can be shown when useful
   - optional usage note explains idioms, slang, cultural expressions, and domain-specific phrases
   - vocabulary history persists the added literal and note fields
+
+## 2026-04-25
+
+- Narrowed the next vocabulary work to a minimal notebook instead of starting the learning/review system.
+- Added a distinct popup notebook entry.
+- Changed deletion semantics from hard delete to trash-first deletion.
+- Added the requirement that trash entries are permanently purged after 15 days.
+- Added the requirement that the popup exposes trash from a top-right icon.

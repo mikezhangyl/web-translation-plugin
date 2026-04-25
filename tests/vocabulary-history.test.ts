@@ -3,7 +3,10 @@ import test from "node:test"
 
 import {
   deleteVocabularyEntry,
+  getActiveVocabularyEntries,
+  getDeletedVocabularyEntries,
   normalizeVocabularyText,
+  purgeExpiredDeletedVocabularyEntries,
   sortVocabularyEntries,
   upsertVocabularyEntry,
   VOCABULARY_STORAGE_KEY,
@@ -141,13 +144,44 @@ test("sortVocabularyEntries supports time and alphabetical ordering", () => {
   )
 })
 
-test("deleteVocabularyEntry removes an entry without mutating the input array", () => {
+test("deleteVocabularyEntry moves an entry to trash without mutating the input array", () => {
   const entries = [baseEntry({ id: "keep" }), baseEntry({ id: "remove" })]
-  const result = deleteVocabularyEntry(entries, "remove")
+  const result = deleteVocabularyEntry(entries, "remove", "2026-04-24T12:00:00.000Z")
+
+  assert.equal(result.length, 2)
+  assert.equal(result.find((entry) => entry.id === "remove")?.deletedAt, "2026-04-24T12:00:00.000Z")
+  assert.equal(entries.length, 2)
+  assert.equal(entries.find((entry) => entry.id === "remove")?.deletedAt, undefined)
+})
+
+test("vocabulary entry helpers split active and deleted entries", () => {
+  const entries = [
+    baseEntry({ id: "active", deletedAt: undefined }),
+    baseEntry({ id: "deleted", deletedAt: "2026-04-24T12:00:00.000Z" })
+  ]
+
+  assert.deepEqual(
+    getActiveVocabularyEntries(entries).map((entry) => entry.id),
+    ["active"]
+  )
+  assert.deepEqual(
+    getDeletedVocabularyEntries(entries).map((entry) => entry.id),
+    ["deleted"]
+  )
+})
+
+test("purgeExpiredDeletedVocabularyEntries permanently removes deleted entries after 15 days", () => {
+  const result = purgeExpiredDeletedVocabularyEntries(
+    [
+      baseEntry({ id: "active" }),
+      baseEntry({ id: "recent-trash", deletedAt: "2026-04-11T00:00:00.000Z" }),
+      baseEntry({ id: "expired-trash", deletedAt: "2026-04-09T23:59:59.000Z" })
+    ],
+    "2026-04-25T00:00:00.000Z"
+  )
 
   assert.deepEqual(
     result.map((entry) => entry.id),
-    ["keep"]
+    ["active", "recent-trash"]
   )
-  assert.equal(entries.length, 2)
 })

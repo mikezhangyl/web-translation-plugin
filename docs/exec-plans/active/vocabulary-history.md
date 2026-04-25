@@ -14,6 +14,10 @@
 - [x] Add popup vocabulary list
 - [x] Add sorting: newest, oldest, A-Z, Z-A
 - [x] Add delete action
+- [x] Add dedicated popup notebook entry
+- [x] Add trash view
+- [x] Change delete to soft delete
+- [x] Add 15-day trash purge
 - [x] Add focused tests
 - [x] Run `npm run check:local`
 
@@ -25,7 +29,10 @@
 4. Add a vocabulary section to the popup that reads saved entries and displays the first review list.
 5. Add sort controls for newest, oldest, A-Z, and Z-A.
 6. Add delete support from the popup list.
-7. Cover storage/sorting behavior with logic tests and add browser-flow coverage only where the UI path is at risk.
+7. Move deleted entries to trash with `deletedAt`.
+8. Purge trashed entries after 15 days.
+9. Keep learning/review states out of this implementation slice.
+10. Cover storage/sorting/trash behavior with logic tests and add browser-flow coverage only where the UI path is at risk.
 
 ## Storage Notes
 
@@ -33,6 +40,9 @@
 - Use one stable key for the vocabulary list.
 - Keep storage access behind a small module so a later IndexedDB migration does not touch UI components directly.
 - Store ISO timestamps for `createdAt` and `updatedAt`.
+- Store `deletedAt` for trashed entries.
+- Keep active and trashed entries in the same storage key for now; split with pure helper functions.
+- Purge expired trash entries when reading the vocabulary list.
 
 ## UI Notes
 
@@ -54,5 +64,6 @@
 - Vocabulary entries are stored in `chrome.storage.local` under `translation.vocabulary.entries`.
 - Duplicate saves are keyed by `normalizedText`; updates preserve `createdAt` and refresh `updatedAt`.
 - The first UI pass saves only flash-card results from the selection card.
-- The popup now exposes review, sorting, refresh, and delete actions without turning the popup into a full dashboard.
+- The popup now exposes a dedicated notebook entry, sorting, refresh, and soft-delete actions without turning the popup into a full dashboard.
+- Deleted entries move to a trash view and are purged after 15 days.
 - Browser E2E exposed and fixed a card interaction bug where inner button mouseup events could trigger selection reprocessing.

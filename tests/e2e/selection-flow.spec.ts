@@ -122,7 +122,7 @@ test("selection flow shows openai-compatible success", async ({}, testInfo) => {
   })
 })
 
-test("flash-card vocabulary can be saved, sorted, and deleted from the popup", async ({}) => {
+test("flash-card vocabulary can be saved, sorted, and moved to trash from the notebook entry", async ({}) => {
   await runWithExtension(async ({ context, page }) => {
     await setE2EMode(page, "openai_success")
     const card = await openCard(page)
@@ -136,6 +136,9 @@ test("flash-card vocabulary can be saved, sorted, and deleted from the popup", a
     await popupPage.goto(`chrome-extension://${extensionId}/popup.html`, {
       waitUntil: "domcontentloaded"
     })
+    await expect(popupPage.getByTestId("popup-view-vocabulary")).toBeVisible()
+    await expect(popupPage.getByTestId("popup-view-settings")).toBeVisible()
+    await expect(popupPage.getByTestId("popup-view-trash")).toBeVisible()
 
     const seededEntry: VocabularyEntry = {
       id: "seed-apple",
@@ -172,7 +175,12 @@ test("flash-card vocabulary can be saved, sorted, and deleted from the popup", a
 
     await popupPage.getByRole("button", { name: "Delete Example" }).click()
     await expect(vocabularyList.getByTestId("vocabulary-entry-text").filter({ hasText: "Example" })).toHaveCount(0)
+    await popupPage.getByTestId("popup-view-trash").click()
+    await expect(popupPage.getByRole("heading", { name: "Trash" })).toBeVisible()
+    await expect(popupPage.getByTestId("vocabulary-trash-list")).toContainText("Example")
+    await expect(popupPage.getByText("Permanently deletes after 15 days")).toBeVisible()
 
+    await popupPage.getByTestId("popup-view-vocabulary").click()
     await popupPage.getByRole("button", { name: "Delete Apple" }).click()
     await expect(popupPage.getByTestId("vocabulary-empty-state")).toBeVisible()
     await popupPage.close()
@@ -429,6 +437,7 @@ test("popup troubleshooting panel shows llm interaction logs with timing", async
     await expect(secondCard.getByTestId("translation-line-meaning")).toHaveText("黑曜石（OpenAI）")
 
     await popupPage.bringToFront()
+    await popupPage.getByTestId("popup-view-settings").click()
     await expect(
       popupPage.getByRole("heading", { name: "Pipeline & LLM Logs" })
     ).toBeVisible()

@@ -1230,3 +1230,43 @@ Persist the vocabulary review product direction as durable project memory. The s
 
 ### Result
 Success. The vocabulary review plan is now stored as an active requirement stream.
+
+## Step 27
+
+### User Instruction
+```text
+commit，然后我打算先不做学习功能， 先做一个最简朴的词汇本，把词汇本里的词按照字母，或者加入时间排序，每个单词显示音标，解释，例句。然后用户可以把一个单词从生词本里删除，删除以后的单词进入一个回收站，15 天以后彻底删除，右上角显示回收站图标。生词本有自己独特的入口， 从插件的入口进入
+```
+
+### Understanding
+Commit the previously captured vocabulary-review requirement, then implement the narrower immediate MVP: a dedicated popup vocabulary notebook entry, sorted saved entries with phonetic/explanation/example fields, soft delete into trash, 15-day purge, and a top-right trash icon. Defer learning/review mechanics.
+
+### Plan
+1. Commit the vocabulary-review requirement docs.
+2. Use TDD for the minimal vocabulary notebook changes.
+3. Add storage tests for soft delete, active/trash grouping, and 15-day purge.
+4. Add E2E coverage for the dedicated notebook entry and trash flow.
+5. Implement storage and popup UI changes.
+6. Update product and requirement docs to reflect the narrowed scope.
+7. Validate logic tests, build, mock E2E, docs, and memory.
+
+### Actions Taken
+- Committed the vocabulary-review requirement as `71258c6 docs: capture vocabulary review requirement`.
+- Added failing tests for trash-first deletion and 15-day purge.
+- Implemented `deletedAt`, active/trash helpers, and read-time purge in `lib/vocabulary-history.ts`.
+- Added popup navigation with dedicated `Vocabulary`, `Settings`, and top-right trash entries.
+- Changed vocabulary deletion to move entries into trash.
+- Added a trash view with 15-day permanent deletion copy.
+- Updated E2E tests for the new popup navigation and trash flow.
+- Updated product state, vocabulary-history PRD, vocabulary-history plan, vocabulary-review PRD status, and requirement timeline.
+
+### Validation
+- `npm run test:ui-logic`: PASS.
+- `npm run build`: PASS.
+- `npm run test:e2e:mock`: PASS.
+- `npm run check:docs`: PASS.
+- `npm run check:memory`: PASS.
+- `npm run check:local`: PASS, including live provider gate.
+
+### Result
+Success. The minimal vocabulary notebook behavior is implemented and passing full local verification.

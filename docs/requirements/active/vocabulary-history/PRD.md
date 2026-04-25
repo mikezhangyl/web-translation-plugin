@@ -1,7 +1,7 @@
 ---
 status: active
 created: 2026-04-24
-updated: 2026-04-24
+updated: 2026-04-25
 source:
   - repo: web-translation-plugin
     path: docs/exec-plans/active/vocabulary-history.md
@@ -14,7 +14,7 @@ superseded_by: []
 
 ## Summary
 
-Turn the extension into a personal vocabulary notebook for the local user. After translating a word or short phrase, the user can save it locally, reopen the extension later, and review saved entries with phonetic spelling, explanation, example sentence, source context, and sorting by added time or alphabetical order.
+Turn the extension into a personal vocabulary notebook for the local user. After translating a word or short phrase, the user can save it locally, reopen the extension later through a dedicated notebook entry, and review saved entries with phonetic spelling, explanation, example sentence, source context, and sorting by added time or alphabetical order.
 
 ## Target User
 
@@ -40,12 +40,17 @@ Turn the extension into a personal vocabulary notebook for the local user. After
   - source title
   - nearby context text
 - allow deleting an entry that was added by mistake
+- move deleted entries into a vocabulary trash instead of permanently deleting immediately
+- permanently purge trashed entries after 15 days
+- expose the trash from a top-right icon in the popup
 
 ## Non-Goals
 
 - account login
 - cloud sync
 - Anki-style spaced repetition
+- active-recall learning modes
+- mastered/new/due learning states
 - bulk import or export
 - social sharing
 - automatic saving for every translation
@@ -61,6 +66,9 @@ Turn the extension into a personal vocabulary notebook for the local user. After
 - Alphabetical sorting uses `normalizedText`.
 - Time sorting uses `createdAt`.
 - Source context is memory aid only; it does not participate in sorting.
+- The vocabulary notebook has a distinct popup entry and should not be buried under provider settings.
+- Delete means soft delete. A deleted entry leaves the main notebook, appears in trash, and is permanently purged after 15 days.
+- Learning functionality from `vocabulary-review` is deferred until the minimal notebook proves useful.
 
 ## Data Contract
 
@@ -79,6 +87,7 @@ type VocabularyEntry = {
   selectionType: "word" | "phrase" | "sentence" | "paragraph"
   createdAt: string
   updatedAt: string
+  deletedAt?: string
 }
 ```
 
@@ -90,6 +99,9 @@ type VocabularyEntry = {
 4. As a user, I want to sort words alphabetically, so I can find a saved word quickly.
 5. As a user, I want each word to keep phonetic spelling, explanation, and example, so review does not require another translation call.
 6. As a user, I want to delete mistaken entries, so my vocabulary list stays clean.
+7. As a user, I want deleted words to go to a trash area first, so accidental deletion is less risky.
+8. As a user, I want trash to clean itself after 15 days, so old deleted entries do not linger forever.
+9. As a user, I want a clear vocabulary entry from the plugin popup, so the notebook feels like a real feature instead of a settings subsection.
 
 ## Acceptance Criteria
 
@@ -97,6 +109,9 @@ type VocabularyEntry = {
 - Saved entries persist after closing and reopening the extension popup.
 - Popup shows saved entries with source text, phonetic, explanation, and example when available.
 - Popup sorting supports newest, oldest, A-Z, and Z-A.
-- Deleting an entry removes it from persistent storage and from the popup list.
+- The popup exposes a distinct vocabulary notebook entry.
+- The popup exposes a top-right trash icon.
+- Deleting an entry removes it from the main notebook list and moves it to trash.
+- Trashed entries are retained for 15 days, then permanently purged.
 - Saving the same normalized word twice does not create duplicate primary entries.
 - `npm run check:local` passes.

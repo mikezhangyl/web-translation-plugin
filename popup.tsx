@@ -14,9 +14,12 @@ import {
   type TranslationSettings
 } from "./lib/translation-settings"
 import {
+  getActiveVocabularyEntries,
+  getDeletedVocabularyEntries,
   readVocabularyEntries,
   removeVocabularyEntry,
   sortVocabularyEntries,
+  VOCABULARY_TRASH_RETENTION_DAYS,
   type VocabularyEntry,
   type VocabularySortOrder
 } from "./lib/vocabulary-history"
@@ -120,6 +123,7 @@ type TracePhase = {
 type CopyState = "idle" | "copying" | "copied" | "error"
 type ClearState = "idle" | "clearing" | "cleared" | "error"
 type VocabularyDeleteState = "idle" | "deleting"
+type PopupView = "vocabulary" | "settings" | "trash"
 
 function IndexPopup() {
   const [settings, setSettings] = useState<TranslationSettings>(EMPTY_TRANSLATION_SETTINGS)
@@ -131,6 +135,7 @@ function IndexPopup() {
   const [vocabularyEntries, setVocabularyEntries] = useState<VocabularyEntry[]>([])
   const [vocabularySortOrder, setVocabularySortOrder] = useState<VocabularySortOrder>("newest")
   const [vocabularyDeleteState, setVocabularyDeleteState] = useState<VocabularyDeleteState>("idle")
+  const [popupView, setPopupView] = useState<PopupView>("vocabulary")
 
   const readEnvDefaults = async (
     profileId: TranslationProfileId,
@@ -537,7 +542,10 @@ function IndexPopup() {
           : "#5d5362",
     transition: "all 140ms ease"
   } as const
-  const sortedVocabularyEntries = sortVocabularyEntries(vocabularyEntries, vocabularySortOrder)
+  const activeVocabularyEntries = getActiveVocabularyEntries(vocabularyEntries)
+  const deletedVocabularyEntries = getDeletedVocabularyEntries(vocabularyEntries)
+  const sortedVocabularyEntries = sortVocabularyEntries(activeVocabularyEntries, vocabularySortOrder)
+  const sortedDeletedVocabularyEntries = sortVocabularyEntries(deletedVocabularyEntries, "newest")
   const deleteVocabularyEntry = async (entryId: string) => {
     if (vocabularyDeleteState === "deleting") {
       return
@@ -546,7 +554,7 @@ function IndexPopup() {
     setVocabularyDeleteState("deleting")
     try {
       setVocabularyEntries(await removeVocabularyEntry(entryId))
-      setStatus("Vocabulary entry removed.")
+      setStatus(`Vocabulary entry moved to trash for ${VOCABULARY_TRASH_RETENTION_DAYS} days.`)
     } finally {
       setVocabularyDeleteState("idle")
     }
@@ -560,7 +568,148 @@ function IndexPopup() {
         fontFamily: POPUP_FONT_STACK,
         background: "linear-gradient(180deg, #fdfbfd 0%, #f7f3f8 100%)"
       }}>
-      <section style={{ ...popSurface, padding: 18, marginBottom: 12 }}>
+      <header
+        style={{
+          alignItems: "center",
+          display: "flex",
+          gap: 8,
+          justifyContent: "space-between",
+          marginBottom: 12
+        }}>
+        <button
+          data-testid="popup-view-vocabulary"
+          onClick={() => setPopupView("vocabulary")}
+          style={{
+            ...buttonStyle,
+            background:
+              popupView === "vocabulary"
+                ? POPUP_ACCENT_GRADIENT
+                : "rgba(255,255,255,0.82)",
+            border: popupView === "vocabulary" ? "none" : buttonStyle.border,
+            boxShadow: popupView === "vocabulary" ? `0 10px 22px ${POPUP_ACCENT_SHADOW}` : "none",
+            color: popupView === "vocabulary" ? "#fff" : buttonStyle.color,
+            flex: 1,
+            textAlign: "left"
+          }}
+          type="button">
+          Vocabulary
+        </button>
+        <button
+          data-testid="popup-view-settings"
+          onClick={() => setPopupView("settings")}
+          style={{
+            ...buttonStyle,
+            background:
+              popupView === "settings"
+                ? "rgba(255, 177, 100, 0.18)"
+                : "rgba(255,255,255,0.82)",
+            borderColor:
+              popupView === "settings"
+                ? "rgba(223, 111, 47, 0.26)"
+                : "rgba(111,95,121,0.12)"
+          }}
+          type="button">
+          Settings
+        </button>
+        <button
+          aria-label="Open vocabulary trash"
+          data-testid="popup-view-trash"
+          onClick={() => setPopupView("trash")}
+          style={{
+            ...iconButtonStyle,
+            background:
+              popupView === "trash"
+                ? "rgba(255, 177, 100, 0.18)"
+                : "rgba(255,255,255,0.82)",
+            borderColor:
+              popupView === "trash"
+                ? "rgba(223, 111, 47, 0.26)"
+                : "rgba(111,95,121,0.12)"
+          }}
+          title="Trash"
+          type="button">
+          <svg aria-hidden="true" height="15" viewBox="0 0 14 14" width="15">
+            <path d="M3.5 4.5h7" fill="none" stroke="currentColor" strokeLinecap="round" strokeWidth="1.2" />
+            <path d="M5 4.5V3.6c0-.55.45-1 1-1h2c.55 0 1 .45 1 1v.9" fill="none" stroke="currentColor" strokeLinecap="round" strokeWidth="1.2" />
+            <path d="M4.5 4.5l.5 6.2c.04.42.39.73.81.73h2.4c.42 0 .77-.31.81-.73l.5-6.2" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.2" />
+          </svg>
+        </button>
+      </header>
+
+      <section style={{ ...popSurface, padding: 16, marginBottom: 12, display: popupView === "trash" ? "block" : "none" }}>
+        <div style={{ alignItems: "center", display: "flex", justifyContent: "space-between", gap: 10, marginBottom: 10 }}>
+          <div>
+            <p style={{ color: "#a16d42", fontSize: 10, letterSpacing: "0.08em", margin: "0 0 5px", textTransform: "uppercase" }}>
+              Recycle Bin
+            </p>
+            <h3 style={{ fontSize: 16, margin: "0 0 4px", color: "#2f2732" }}>Trash</h3>
+            <p style={{ color: "#665b6c", fontSize: 12, lineHeight: 1.45, margin: 0 }}>
+              Permanently deletes after {VOCABULARY_TRASH_RETENTION_DAYS} days.
+            </p>
+          </div>
+          <span
+            style={{
+              background: "rgba(255, 177, 100, 0.16)",
+              border: "1px solid rgba(223, 111, 47, 0.16)",
+              borderRadius: 999,
+              color: "#8a4b22",
+              fontSize: 11,
+              fontWeight: 700,
+              padding: "7px 10px",
+              whiteSpace: "nowrap"
+            }}>
+            {deletedVocabularyEntries.length} deleted
+          </span>
+        </div>
+
+        {sortedDeletedVocabularyEntries.length === 0 ? (
+          <div
+            data-testid="vocabulary-trash-empty-state"
+            style={{
+              background: "rgba(255,255,255,0.62)",
+              border: "1px dashed rgba(111,95,121,0.18)",
+              borderRadius: 16,
+              color: "#665b6c",
+              fontSize: 12,
+              lineHeight: 1.5,
+              padding: 14
+            }}>
+            Trash is empty.
+          </div>
+        ) : (
+          <div data-testid="vocabulary-trash-list" style={{ display: "grid", gap: 10, maxHeight: 260, overflow: "auto" }}>
+            {sortedDeletedVocabularyEntries.map((entry) => (
+              <article
+                key={entry.id}
+                style={{
+                  background: "rgba(255,255,255,0.72)",
+                  border: "1px solid rgba(111,95,121,0.1)",
+                  borderRadius: 16,
+                  padding: 12
+                }}>
+                <strong
+                  style={{
+                    color: "#2f2732",
+                    display: "block",
+                    fontFamily: "'Iowan Old Style', 'Palatino Linotype', Georgia, serif",
+                    fontSize: 18,
+                    lineHeight: 1.15
+                  }}>
+                  {entry.sourceText}
+                </strong>
+                <p style={{ color: "#5f5464", fontSize: 12, lineHeight: 1.5, margin: "8px 0 0" }}>
+                  {entry.explanation || entry.translation}
+                </p>
+                <p style={{ color: "#8a7d8f", fontSize: 10, margin: "10px 0 0" }}>
+                  Deleted {entry.deletedAt ? new Date(entry.deletedAt).toLocaleDateString() : "-"}
+                </p>
+              </article>
+            ))}
+          </div>
+        )}
+      </section>
+
+      <section style={{ ...popSurface, padding: 18, marginBottom: 12, display: popupView === "settings" ? "block" : "none" }}>
         <div style={{ display: "flex", justifyContent: "space-between", gap: 12, marginBottom: 12 }}>
           <div>
             <p style={{ color: "#8a7d8f", fontSize: 10, letterSpacing: "0.08em", margin: "0 0 6px", textTransform: "uppercase" }}>
@@ -704,7 +853,7 @@ function IndexPopup() {
         </div>
       </section>
 
-      <section style={{ ...popSurface, padding: 16, marginBottom: 12 }}>
+      <section style={{ ...popSurface, padding: 16, marginBottom: 12, display: popupView === "vocabulary" ? "block" : "none" }}>
         <div style={{ alignItems: "center", display: "flex", justifyContent: "space-between", gap: 10, marginBottom: 8 }}>
           <div>
             <p style={{ color: "#a16d42", fontSize: 10, letterSpacing: "0.08em", margin: "0 0 5px", textTransform: "uppercase" }}>
@@ -726,7 +875,7 @@ function IndexPopup() {
               padding: "7px 10px",
               whiteSpace: "nowrap"
             }}>
-            {vocabularyEntries.length} saved
+            {activeVocabularyEntries.length} saved
           </span>
         </div>
 
@@ -860,7 +1009,7 @@ function IndexPopup() {
         )}
       </section>
 
-      <section style={{ ...popSurface, padding: 16, marginBottom: 12 }}>
+      <section style={{ ...popSurface, padding: 16, marginBottom: 12, display: popupView === "settings" ? "block" : "none" }}>
         <h3 style={{ fontSize: 14, margin: "0 0 4px", color: "#2f2732" }}>Diagnostics</h3>
         <p style={{ color: "#665b6c", fontSize: 12, lineHeight: 1.45, margin: "0 0 12px" }}>
           Benchmarks, saved logs, and trace visibility for the latest translation flow.
@@ -954,7 +1103,7 @@ function IndexPopup() {
         </div>
       </section>
 
-      <section style={{ ...popSurface, padding: 16 }}>
+      <section style={{ ...popSurface, padding: 16, display: popupView === "settings" ? "block" : "none" }}>
         <div style={{ alignItems: "center", display: "flex", justifyContent: "space-between", gap: 10, marginBottom: 6 }}>
           <h3 style={{ fontSize: 14, margin: 0, color: "#2f2732" }}>Pipeline & LLM Logs</h3>
           <div style={{ display: "inline-flex", gap: 8 }}>
