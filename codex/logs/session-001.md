@@ -1170,3 +1170,32 @@ Keep Codex in the safer `on-request` approval mode and avoid switching the proje
 
 ### Result
 Success. The project policy now favors controlled `on-request` execution with narrow reusable prefix approvals.
+
+## Step 25
+
+### User Instruction
+```text
+你还需要把 git add 和 git commit 也加到白名单里去，然后直接 commit
+```
+
+### Understanding
+Make the documented recurring prefix approval list explicitly include both `git add` and `git commit`, then commit that harness documentation adjustment.
+
+### Plan
+1. Add `git add` to the Codex approval strategy list.
+2. Keep `git commit` in the same list.
+3. Update the active session pointer.
+4. Validate Codex and memory checks.
+5. Commit the change.
+
+### Actions Taken
+- Added `git add` to `.codex/AGENTS.md` under recommended recurring prefix approvals.
+- Confirmed `git commit` was already documented.
+- Advanced `codex/current-session.md` to the next step.
+
+### Validation
+- `npm run check:codex`: PASS.
+- `npm run check:memory`: PASS.
+
+### Result
+Success. The prefix approval documentation now explicitly names both staging and committing.
