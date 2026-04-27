@@ -1270,3 +1270,44 @@ Commit the previously captured vocabulary-review requirement, then implement the
 
 ### Result
 Success. The minimal vocabulary notebook behavior is implemented and passing full local verification.
+
+## Step 28
+
+### User Instruction
+```text
+要不你做一个 mvp，来阐述你上面说的概念， 这个 scope 可能大了点， 你需要切割成几个 feature，一步一步做， 你的计划会落盘吗？
+所以你打算怎么开始
+好的， 你一步一步做， 中间不需要我就继续，直到做完
+```
+
+### Understanding
+Build an MVP that demonstrates the dedicated vocabulary notebook-page concept. The task should be sliced, persisted to docs first, then implemented with TDD. Continue autonomously until complete unless blocked.
+
+### Plan
+1. Persist a new `vocabulary-notebook-page` PRD and execution plan.
+2. Update docs indexes, requirement timeline, and session memory.
+3. Add failing E2E coverage for popup launcher and notebook page flows.
+4. Implement popup launcher and dedicated notebook page.
+5. Validate with logic tests, build, mock E2E, docs, memory, and full local verification.
+
+### Actions Taken
+- Added `docs/requirements/active/vocabulary-notebook-page/PRD.md`.
+- Added `docs/requirements/active/vocabulary-notebook-page/CHANGELOG.md`.
+- Added `docs/exec-plans/active/vocabulary-notebook-page.md`.
+- Updated active requirements index, active exec-plan index, and requirement timeline.
+- Advanced the current session pointer.
+- Added E2E coverage for popup launcher, dedicated notebook page, search, sorting, delete-to-trash, and trash view.
+- Added `Open Notebook` popup action.
+- Added `tabs/vocabulary.tsx` as a roomy dedicated vocabulary notebook page.
+- Added notebook search, sorting, list/detail selection, delete-to-trash, trash view, and disabled review-mode placeholder.
+- Updated current product state, execution-plan status, changelog, and requirement timeline.
+
+### Validation
+- `npm run build`: PASS.
+- `npm run test:e2e:mock`: PASS.
+- `npm run check:docs`: PASS.
+- `npm run check:memory`: PASS.
+- `npm run check:local`: PASS, including live provider gate.
+
+### Result
+Success. The notebook-page MVP is implemented and passing full local verification.

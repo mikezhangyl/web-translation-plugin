@@ -11,6 +11,7 @@
   - last dragged position is persisted in `chrome.storage.local`
 - Popup surface includes:
   - a distinct vocabulary notebook entry
+  - an `Open Notebook` action that launches the dedicated notebook page
   - a top-right vocabulary trash entry
   - provider settings
   - benchmark-model settings
@@ -41,6 +42,13 @@
   - oldest added
   - A-Z
   - Z-A
+- Dedicated vocabulary notebook page supports:
+  - roomy two-panel list/detail layout
+  - search across saved word, translation, explanation, example, note, and source context
+  - newest/oldest/A-Z/Z-A sorting
+  - delete-to-trash from the detail panel
+  - trash view with 15-day purge copy
+  - disabled review-mode placeholder for future study workflows
 - Delete is a soft delete:
   - deleted entries leave the main notebook immediately
   - deleted entries appear in the vocabulary trash
@@ -131,7 +139,7 @@
 ## Known Limits And Risks
 
 - Paragraph translation remains constrained and is not yet productized beyond the single-paragraph limit contract.
-- Vocabulary history is local-device only; there is no account sync, export, spaced repetition, or full dashboard view yet.
+- Vocabulary history is local-device only; there is no account sync, export, or spaced repetition yet.
 - Sentence risk notices are heuristic model self-review output. They are useful for warning that a phrase may need extra attention, but they are not a reliable source of the correct meaning.
 - Provider knowledge is more stable than before, but there is still no dedicated long-lived provider-facts template beyond the core docs.
 - Benchmark/comparison settings remain diagnostics-oriented and are not the main user-visible acceptance path.
@@ -139,8 +147,8 @@
 
 ## Next Recommended Workstream
 
-- Keep the vocabulary notebook simple until the save/sort/trash path proves useful in daily use.
-- Revisit study workflows, denser review states, import/export, or spaced repetition after the minimal notebook is stable.
+- Use the dedicated notebook page as the primary vocabulary review surface.
+- Revisit study workflows, denser review states, import/export, or spaced repetition after the notebook page proves useful.
 - Continue stabilizing paragraph translation as an explicit product mode.
 - Keep the provider workflow strict for any new provider/model work:
   - docs

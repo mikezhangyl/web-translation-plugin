@@ -187,6 +187,87 @@ test("flash-card vocabulary can be saved, sorted, and moved to trash from the no
   })
 })
 
+test("popup opens the dedicated vocabulary notebook page with search sort and trash flow", async ({}) => {
+  await runWithExtension(async ({ context }) => {
+    const extensionId = await getExtensionId(context)
+    const popupPage = await context.newPage()
+    await popupPage.goto(`chrome-extension://${extensionId}/popup.html`, {
+      waitUntil: "domcontentloaded"
+    })
+
+    const seedEntries: VocabularyEntry[] = [
+      {
+        id: "seed-coffee",
+        sourceText: "Coffee badging",
+        normalizedText: "coffee badging",
+        translation: "在办公室短暂停留刷存在感",
+        phonetic: "/ˈkɔːfi bædʒɪŋ/",
+        explanation: "showing up briefly at the office mainly to be seen",
+        literal: "咖啡打卡",
+        note: "Workplace slang; literal translation can mislead.",
+        example: "Coffee badging became common after hybrid work policies.",
+        sourceUrl: "https://example.test/work",
+        sourceTitle: "Hybrid Work Notes",
+        contextText: "Coffee badging became common after hybrid work policies.",
+        selectionType: "phrase",
+        createdAt: "2026-04-24T08:00:00.000Z",
+        updatedAt: "2026-04-24T08:00:00.000Z"
+      },
+      {
+        id: "seed-anchor",
+        sourceText: "Anchor",
+        normalizedText: "anchor",
+        translation: "锚点；固定点",
+        phonetic: "/ˈæŋkər/",
+        explanation: "a stable point or object",
+        example: "The anchor held during the storm.",
+        selectionType: "word",
+        createdAt: "2026-04-25T08:00:00.000Z",
+        updatedAt: "2026-04-25T08:00:00.000Z"
+      }
+    ]
+    await popupPage.evaluate(
+      async ({ storageKey, entries }) => {
+        await chrome.storage.local.set({ [storageKey]: entries })
+      },
+      { storageKey: VOCABULARY_STORAGE_KEY, entries: seedEntries }
+    )
+
+    const notebookPromise = context.waitForEvent("page")
+    await popupPage.getByTestId("open-vocabulary-notebook").click()
+    const notebookPage = await notebookPromise
+    await notebookPage.waitForLoadState("domcontentloaded")
+    await expect(notebookPage).toHaveURL(new RegExp(`chrome-extension://${extensionId}/tabs/vocabulary\\.html`))
+
+    await expect(notebookPage.getByRole("heading", { name: "Vocabulary Notebook" })).toBeVisible()
+    await expect(notebookPage.getByRole("button", { name: "Review coming later" })).toBeDisabled()
+    await expect(notebookPage.getByTestId("notebook-entry-list")).toContainText("Coffee badging")
+    await expect(notebookPage.getByTestId("notebook-entry-list")).toContainText("Anchor")
+    await expect(notebookPage.getByTestId("notebook-detail-title")).toHaveText("Anchor")
+    await expect(notebookPage.getByTestId("notebook-detail-phonetic")).toHaveText("/ˈæŋkər/")
+    await expect(notebookPage.getByText("The anchor held during the storm.")).toBeVisible()
+
+    await notebookPage.getByTestId("notebook-sort-order").selectOption("az")
+    await expect(notebookPage.getByTestId("notebook-entry-text").first()).toHaveText("Anchor")
+
+    await notebookPage.getByTestId("notebook-search").fill("coffee")
+    await expect(notebookPage.getByTestId("notebook-entry-text")).toHaveCount(1)
+    await expect(notebookPage.getByTestId("notebook-entry-text")).toHaveText("Coffee badging")
+    await expect(notebookPage.getByTestId("notebook-detail-title")).toHaveText("Coffee badging")
+    await expect(notebookPage.getByText("Workplace slang; literal translation can mislead.")).toBeVisible()
+
+    await notebookPage.getByRole("button", { name: "Move Coffee badging to trash" }).click()
+    await expect(notebookPage.getByTestId("notebook-empty-state")).toContainText("No words match")
+    await notebookPage.getByTestId("notebook-view-trash").click()
+    await expect(notebookPage.getByRole("heading", { name: "Trash" })).toBeVisible()
+    await expect(notebookPage.getByTestId("notebook-trash-list")).toContainText("Coffee badging")
+    await expect(notebookPage.getByText("Permanently deletes after 15 days")).toBeVisible()
+
+    await notebookPage.close()
+    await popupPage.close()
+  })
+})
+
 test("selection flow still shows marker when host page hides native buttons", async ({}) => {
   await runWithExtension(async ({ page }) => {
     await setE2EMode(page, "openai_success")

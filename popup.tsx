@@ -559,6 +559,16 @@ function IndexPopup() {
       setVocabularyDeleteState("idle")
     }
   }
+  const openVocabularyNotebook = async () => {
+    if (typeof chrome === "undefined" || !chrome.tabs?.create || !chrome.runtime?.getURL) {
+      setStatus("Opening notebook is unavailable in this context.")
+      return
+    }
+
+    await chrome.tabs.create({
+      url: chrome.runtime.getURL("tabs/vocabulary.html")
+    })
+  }
 
   return (
     <div
@@ -593,6 +603,22 @@ function IndexPopup() {
           }}
           type="button">
           Vocabulary
+        </button>
+        <button
+          data-testid="open-vocabulary-notebook"
+          onClick={() => {
+            openVocabularyNotebook().catch((error) => {
+              setStatus(error instanceof Error ? error.message : "Failed to open notebook.")
+            })
+          }}
+          style={{
+            ...buttonStyle,
+            background: "rgba(255, 177, 100, 0.18)",
+            borderColor: "rgba(223, 111, 47, 0.22)",
+            color: "#8a4b22"
+          }}
+          type="button">
+          Open Notebook
         </button>
         <button
           data-testid="popup-view-settings"

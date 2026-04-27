@@ -8,6 +8,8 @@ This directory holds requirement streams that are still shaping implementation.
   active requirement for promoting paragraph translation from exploratory behavior to a documented product mode
 - [vocabulary-history/PRD.md](./vocabulary-history/PRD.md)
   active requirement for local vocabulary saving, review, sorting, and deletion
+- [vocabulary-notebook-page/PRD.md](./vocabulary-notebook-page/PRD.md)
+  active requirement for a dedicated vocabulary notebook page launched from the popup
 - [vocabulary-review/PRD.md](./vocabulary-review/PRD.md)
   active requirement for contextual vocabulary reinforcement, active recall, and lightweight review scheduling
 - [translation-risk-notices/PRD.md](./translation-risk-notices/PRD.md)
